@@ -147,4 +147,9 @@ public class PublicModel : PageModel
 
         return currentUser.Following.Any(f => f.FollowedById == followTarget.Id);
     }
-}
+
+    public bool LoginStatus()
+    {
+        return HttpContext.Session.GetString("user_id") != null;
+    }
+}   
