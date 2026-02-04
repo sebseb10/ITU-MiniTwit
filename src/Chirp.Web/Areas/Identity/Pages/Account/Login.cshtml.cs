@@ -122,6 +122,7 @@ namespace Chirp.Web.Areas.Identity.Pages.Account
                     var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
                     HttpContext.Session.SetString("user_id", user.Id);
                     // ends here
+                    
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
