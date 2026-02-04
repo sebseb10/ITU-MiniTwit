@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using System.Security.Claims;
 using System.Text.Json;
+using Microsoft.CodeAnalysis.Options;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +22,7 @@ if (builder.Environment.IsProduction())
         ?? Environment.GetEnvironmentVariable("SQLAZURECONNSTR_AzureSQL")
                        ?? throw new InvalidOperationException(
                            "AzureSQL connection string not found.  Configure it in Azure Portal.");
-
+    // to here
     builder.Services.AddDbContext<CheepDbContext>(options => 
         options.UseSqlServer(connectionString, sqlOptions =>
             {
@@ -66,62 +68,27 @@ builder.Services.AddScoped<ICheepService, CheepService>();
 builder.Services.AddScoped<ICheepRepository, CheepRepository>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
+
+// To use HTTP Session cookies to handle if a user is logged into our system
+builder.Services.AddDistributedMemoryCache();
+// Used from microsofts documentation here
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromSeconds(10);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 // HSTS necessary for the HSTS header for reasons
 builder.Services.AddHsts(options =>
 {
     options.MaxAge = TimeSpan.FromHours(1);
 });
-// github authentication
-var githubClientId = builder.Configuration["authentication:github:clientId"];
-var  githubClientSecret = builder.Configuration["authentication:github:clientSecret"];
-var googleClientId = builder.Configuration["authentication:google:clientId"];
-var googleClientSecret = builder.Configuration["authentication:google:clientSecret"];
 
 var authBuilder = builder.Services.AddAuthentication();
 
-if (!string.IsNullOrEmpty(githubClientId) && !string.IsNullOrEmpty(githubClientSecret))
-{
-    authBuilder.AddGitHub(githubOptions =>
-    {
-        githubOptions.ClientId = githubClientId;
-        githubOptions.ClientSecret = githubClientSecret;
-        githubOptions.CallbackPath = "/signin-github";
-        githubOptions.Scope
-            .Add("user:email"); // Explicitly asking for Email as Github can be difficult to get Email from
-        githubOptions.SaveTokens = true; // maybe
-        githubOptions.CorrelationCookie.SameSite = SameSiteMode.None;
-        githubOptions.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
-    });
-}
-
-if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
-{
-    authBuilder.AddGoogle(googleOptions =>
-    {
-        googleOptions.ClientId = googleClientId;
-        googleOptions.ClientSecret = googleClientSecret;
-        googleOptions.CallbackPath = "/signin-google";
-        // Optional: get additional info like profile or email
-        googleOptions.Scope.Add("profile");
-        googleOptions.Scope.Add("email");
-        googleOptions.SaveTokens = true;
-        // Ensure cookies are secure for cross-site auth
-        googleOptions.CorrelationCookie.SameSite = SameSiteMode.None;
-        googleOptions.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
-    });
-}
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-
-// Create a disposable service scope
 using (var scope = app.Services.CreateScope())
 {
     using var context =
@@ -155,6 +122,8 @@ app.UseRouting();
 app.UseAuthentication();
 
 app.UseAuthorization();
+app.UseSession();
+
 app.MapRazorPages();
 
 app.Run();
