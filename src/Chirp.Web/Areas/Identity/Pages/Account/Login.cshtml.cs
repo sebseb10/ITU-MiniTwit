@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Chirp.Web.Areas.Identity.Pages.Account
 {
+    [AllowAnonymous]
     public class LoginModel : PageModel
     {
         private readonly SignInManager<Author> _signInManager;
@@ -116,6 +117,12 @@ namespace Chirp.Web.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+
+                    //This is for allowing sessions to contain a users Id
+                    var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
+                    HttpContext.Session.SetString("user_id", user.Id);
+                    // ends here
+                    
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)

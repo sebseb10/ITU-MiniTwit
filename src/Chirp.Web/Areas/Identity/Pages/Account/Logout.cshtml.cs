@@ -28,6 +28,9 @@ namespace Chirp.Web.Areas.Identity.Pages.Account
         {
             await _signInManager.SignOutAsync();
             _logger.LogInformation("User logged out.");
+            // Clear the session!
+            HttpContext.Session.Clear();
+
             if (returnUrl != null)
             {
                 return LocalRedirect(returnUrl);

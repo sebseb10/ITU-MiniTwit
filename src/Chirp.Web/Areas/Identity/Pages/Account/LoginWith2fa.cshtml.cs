@@ -114,6 +114,10 @@ namespace Chirp.Web.Areas.Identity.Pages.Account
             if (result.Succeeded)
             {
                 _logger.LogInformation("User with ID '{UserId}' logged in with 2fa.", user.Id);
+                
+                // Add the userId to the session also with 2Factor if it ever is reused
+                HttpContext.Session.SetString("user_id", user.Id);
+            
                 return LocalRedirect(returnUrl);
             }
             else if (result.IsLockedOut)
