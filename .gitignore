@@ -496,3 +496,6 @@ $RECYCLE.BIN/
 bin/
 obj/
 out/
+
+# Ignore API Spec
+API_Spec/
