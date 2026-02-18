@@ -33,14 +33,20 @@ if (builder.Environment.IsProduction())
                 sqlOptions.CommandTimeout(60);
             }));
 } 
-else 
-{ 
-    connectionString = builder. Configuration.GetConnectionString("DefaultConnection")
-                       ??  "Data Source=Chirp.db";
-    builder.Services.AddDbContext<CheepDbContext>(options => options.UseSqlite(connectionString));
-} 
+else
+{
+    var dataDir = Path.Combine(builder.Environment.ContentRootPath, "data");
+    Directory.CreateDirectory(dataDir);
+
+    var dbPath = Path.Combine(dataDir, "Chirp.db");
+    connectionString = $"Data Source={dbPath}";
+
+    builder.Services.AddDbContext<CheepDbContext>(options =>
+        options.UseSqlite(connectionString));
+}
 
 // Adds the Identity services to the DI container and uses a custom user type, ApplicationUser
+
 builder.Services.AddDefaultIdentity<Author>(options =>
     {
         options.SignIn.RequireConfirmedAccount = true;
