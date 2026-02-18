@@ -50,7 +50,7 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
         /// <remarks>Get list of users followed by the given user.  - Query param &#x60;?no&#x3D;&#x60; limits result count. - Optionally updates a &#39;latest&#39; global value via &#x60;?latest&#x3D;&#x60; query param.</remarks>
         /// <param name="username"></param>
         /// <param name="authorization">Authorization string of the form &#x60;Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh&#x60;. Used to authenticate as simulator</param>
-        /// <param name="latest">Optional: &#x60;latest&#x60; value to update</param>
+        /// <param name="latest">Optional: &#x60;latest&#x60; value to update</param>     //TODO Not sure what this on means or if its relevant??
         /// <param name="no">Optional: &#x60;no&#x60; limits result count</param>
         /// <response code="200">Success</response>
         /// <response code="403">Unauthorized - Must include correct Authorization header</response>
@@ -74,7 +74,7 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
                 return StatusCode(403, new ErrorResponse
                 {
                     Status = 403,
-                    ErrorMsg = "You are not authorized to use this resource!"
+                    ErrorMsg = "You are not authorized to access follwed users!"
                 });
             }
             
@@ -93,6 +93,10 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default);
             
+            
+            var limit = no ?? int.MaxValue; // limit defined through the optional "no" value in the fromquery 
+
+            
             var follows = _db.Follows
                 .AsNoTracking()
                 .Where(f => f.FollowsId == user.Id)
@@ -103,6 +107,7 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
                     (f, a) => a.UserName
                 )
                 .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Take(limit)
                 .ToList()!;
 
             return StatusCode(200, new FollowsResponse
@@ -111,7 +116,7 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
             
             
             
-            
+            /*
             string exampleJson = null;
             exampleJson = "{\n  \"follows\" : [ \"Helge\", \"John\" ]\n}";
             exampleJson = "{\n  \"error_msg\" : \"You are not authorized to use this resource!\",\n  \"status\" : 403\n}";
@@ -121,8 +126,11 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
             : default;
             //TODO: Change the data returned
             return new ObjectResult(example);
+            */
         }
 
+        
+        
         /// <summary>
         /// 
         /// </summary>
@@ -170,11 +178,43 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
         [SwaggerResponse(statusCode: 403, type: typeof(ErrorResponse), description: "Unauthorized - Must include correct Authorization header")]
         public virtual IActionResult GetMessages([FromHeader (Name = "Authorization")][Required()]string authorization, [FromQuery (Name = "latest")]int? latest, [FromQuery (Name = "no")]int? no)
         {
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default);
+            
             //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(403, default);
+
+            if (authorization != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
+            {
+                return StatusCode(403, new ErrorResponse
+                {
+                    Status = 403,
+                    ErrorMsg = "You are not authorized to acsess users Messages!"
+                });
+            }
+            
+            var limit = no ?? int.MaxValue;
+ 
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default);
+
+
+            //TODO mabey implement a way to flag messages? 
+            var msgs = _db.Cheeps
+                .AsNoTracking()
+                .OrderByDescending(c => c.Timestamp)    
+                .Take(limit)
+                .Select(c => new Chirp.Web.MiniTwit_Stub.Models.Message
+                {
+                    User = c.Author.UserName,  
+                    Content = c.Text,         
+                    PubDate = c.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")
+                })
+                .ToList();
+
+            return StatusCode(200, msgs);
+            
+           
+            /*
+ 
             string exampleJson = null;
             exampleJson = "[ {\n  \"pub_date\" : \"2019-12-01 12:00:00\",\n  \"user\" : \"Helge\",\n  \"content\" : \"Hello, World!\"\n}, {\n  \"pub_date\" : \"2019-12-01 12:00:00\",\n  \"user\" : \"Helge\",\n  \"content\" : \"Hello, World!\"\n} ]";
             exampleJson = "{\n  \"error_msg\" : \"You are not authorized to use this resource!\",\n  \"status\" : 403\n}";
@@ -184,6 +224,8 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
             : default;
             //TODO: Change the data returned
             return new ObjectResult(example);
+            
+            */
         }
 
         /// <summary>
@@ -206,12 +248,53 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
         public virtual IActionResult GetMessagesPerUser([FromRoute (Name = "username")][Required]string username, [FromHeader (Name = "Authorization")][Required()]string authorization, [FromQuery (Name = "latest")]int? latest, [FromQuery (Name = "no")]int? no)
         {
 
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default);
             //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(403, default);
+            if (authorization != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
+            {
+                return StatusCode(403, new ErrorResponse
+                {
+                    Status = 403,
+                    ErrorMsg = "You are not authorized to acsess Messages for a speceifc user!"
+                });
+            }
+            
             //TODO: Uncomment the next line to return response 404 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(404);
+            
+            var user = _userManager.FindByNameAsync(username).Result;
+            if (user == null)
+            {
+                return StatusCode(404, new ErrorResponse
+                {
+                    Status = 404,
+                    ErrorMsg = "No user was found with this username!"
+                });
+            }
+            
+            
+            
+            var limit = no ?? int.MaxValue;
+            
+            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(200, default);
+            
+            var msgs = _db.Cheeps
+                .AsNoTracking()
+                .Where(c => c.AuthorID == user.Id)                // or c.Author.UserName == username
+                .OrderByDescending(c => c.Timestamp)
+                .Take(limit)
+                .Select(c => new Chirp.Web.MiniTwit_Stub.Models.Message
+                {
+                    User = username,
+                    Content = c.Text,
+                    PubDate = c.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")
+                })
+                .ToList();
+            
+            return StatusCode(200, msgs);
+            
+            
             string exampleJson = null;
             exampleJson = "[ {\n  \"pub_date\" : \"2019-12-01 12:00:00\",\n  \"user\" : \"Helge\",\n  \"content\" : \"Hello, World!\"\n}, {\n  \"pub_date\" : \"2019-12-01 12:00:00\",\n  \"user\" : \"Helge\",\n  \"content\" : \"Hello, World!\"\n} ]";
             exampleJson = "{\n  \"error_msg\" : \"You are not authorized to use this resource!\",\n  \"status\" : 403\n}";
