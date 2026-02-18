@@ -9,8 +9,10 @@
  */
 
 using System.ComponentModel.DataAnnotations;
+using Chirp.Core;
 using Chirp.Web.MiniTwit_Stub.Attributes;
 using Chirp.Web.MiniTwit_Stub.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
@@ -23,6 +25,14 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
     [ApiController]
     public class MinitwitApiController : ControllerBase
     { 
+        
+        private readonly UserManager<Author> _userManager;
+        public MinitwitApiController(UserManager<Author> userManager)
+        {
+            _userManager = userManager;
+        }
+        
+        
         /// <summary>
         /// 
         /// </summary>
@@ -231,15 +241,50 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
         [ValidateModelState]
         [SwaggerOperation("PostRegister")]
         [SwaggerResponse(statusCode: 400, type: typeof(ErrorResponse), description: "Bad Request | Possible reasons:  - missing username  - invalid email  - password missing  - username already taken")]
-        public virtual IActionResult PostRegister([FromBody]RegisterRequest payload, [FromQuery (Name = "latest")]int? latest)
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        public virtual async Task<IActionResult> PostRegister([FromBody]RegisterRequest payload, [FromQuery (Name = "latest")]int? latest)
         {
 
-            //TODO: Uncomment the next line to return response 204 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(204);
-            //TODO: Uncomment the next line to return response 400 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(400, default);
+            // Basic payload validation (OpenAPI might validate some, but don’t rely on it)
+            if (payload is null ||
+                string.IsNullOrWhiteSpace(payload.Username) ||
+                string.IsNullOrWhiteSpace(payload.Email) ||
+                string.IsNullOrWhiteSpace(payload.Pwd))
+            {
+                return BadRequest(new ErrorResponse {ErrorMsg =  "username, email, and pwd are required", Status = 400});
+            }
 
-            throw new NotImplementedException();
+            // Check if username is taken
+            var existingByName = await _userManager.FindByNameAsync(payload.Username);
+            if (existingByName is not null)
+            {
+                return BadRequest(new ErrorResponse { ErrorMsg = "username already exists", Status = 400 });
+            }
+
+            // Check if email is taken (Identity supports this)
+            var existingByEmail = await _userManager.FindByEmailAsync(payload.Email);
+            if (existingByEmail is not null)
+            {
+                return BadRequest(new ErrorResponse{ ErrorMsg = "email already exists", Status = 400 });
+            }
+
+            var user = new Author
+            {
+                UserName = payload.Username,
+                Email = payload.Email
+            };
+
+            var result = await _userManager.CreateAsync(user, payload.Pwd);
+
+            if (!result.Succeeded)
+            {
+                // Return a single string message like the MiniTwit simulator expects
+                var msg = string.Join("; ", result.Errors.Select(e => e.Description));
+                return BadRequest(new ErrorResponse{ ErrorMsg = msg, Status = 400 });
+            }
+
+            return NoContent(); // 204
         }
     }
 }

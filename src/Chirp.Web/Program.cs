@@ -69,6 +69,8 @@ builder.Services.AddScoped<ICheepRepository, CheepRepository>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
 
+builder.Services.AddControllers();
+
 // To use HTTP Session cookies to handle if a user is logged into our system
 builder.Services.AddDistributedMemoryCache();
 // Used from microsofts documentation here
@@ -123,6 +125,8 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 app.UseSession();
+
+app.MapControllers();
 
 app.MapRazorPages();
 
