@@ -177,7 +177,9 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
         [SwaggerOperation("GetMessages")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<Message>), description: "Success")]
         [SwaggerResponse(statusCode: 403, type: typeof(ErrorResponse), description: "Unauthorized - Must include correct Authorization header")]
-        public virtual IActionResult GetMessages([FromHeader (Name = "Authorization")][Required()]string authorization, [FromQuery (Name = "latest")]int? latest, [FromQuery (Name = "no")]int? no)
+        public virtual IActionResult GetMessages([FromHeader (Name = "Authorization")][Required()]string authorization, 
+            [FromQuery (Name = "latest")]int? latest, 
+            [FromQuery (Name = "no")]int? no)
         {
             
             //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -246,7 +248,10 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
         [SwaggerOperation("GetMessagesPerUser")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<Message>), description: "Success")]
         [SwaggerResponse(statusCode: 403, type: typeof(ErrorResponse), description: "Unauthorized - Must include correct Authorization header")]
-        public virtual IActionResult GetMessagesPerUser([FromRoute (Name = "username")][Required]string username, [FromHeader (Name = "Authorization")][Required()]string authorization, [FromQuery (Name = "latest")]int? latest, [FromQuery (Name = "no")]int? no)
+        public virtual IActionResult GetMessagesPerUser([FromRoute (Name = "username")][Required]string username,
+            [FromHeader (Name = "Authorization")][Required()]string authorization, 
+            [FromQuery (Name = "latest")]int? latest, 
+            [FromQuery (Name = "no")]int? no)
         {
 
             //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -341,7 +346,7 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
         });
     }
 
-    var actor = await _userManager.FindByNameAsync(username);
+    var actor = _userManager.FindByNameAsync(username).Result;
     if (actor == null)
     {
         return StatusCode(404, new ErrorResponse
@@ -415,13 +420,54 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
         [ValidateModelState]
         [SwaggerOperation("PostMessagesPerUser")]
         [SwaggerResponse(statusCode: 403, type: typeof(ErrorResponse), description: "Unauthorized - Must include correct Authorization header")]
-        public virtual IActionResult PostMessagesPerUser([FromRoute (Name = "username")][Required]string username, [FromHeader (Name = "Authorization")][Required()]string authorization, [FromBody]PostMessage payload, [FromQuery (Name = "latest")]int? latest)
+        public virtual IActionResult PostMessagesPerUser([FromRoute (Name = "username")][Required]string username, 
+            [FromHeader (Name = "Authorization")][Required()]string authorization, 
+            [FromBody]PostMessage payload, 
+            [FromQuery (Name = "latest")]
+            int? latest)
         {
+            
+            if (authorization != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
+            {
+                return StatusCode(403, new ErrorResponse
+                {
+                    Status = 403,
+                    ErrorMsg = "You are not authorized to post Messages"
+                });
+            }
+
+            var User =  _userManager.FindByNameAsync(username).Result;
+            if (User == null)
+            {
+                return StatusCode(404, new ErrorResponse
+                {
+                    Status = 404,
+                    ErrorMsg = "no such user is found"
+                });
+            }
+            var content = payload?.Content?.Trim();
+            
+            _db.Cheeps.Add(new Cheep
+            {
+                AuthorID = User.Id,
+                Text = content,
+                Timestamp = DateTime.UtcNow
+            });
+            
+            _db.SaveChangesAsync();
+
+            return NoContent();
+            
+            
+            //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(403, default);
+            
+            
+            
 
             //TODO: Uncomment the next line to return response 204 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(204);
-            //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(403, default);
+           
 
             throw new NotImplementedException();
         }
