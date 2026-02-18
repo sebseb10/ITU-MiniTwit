@@ -75,7 +75,7 @@ builder.Services.AddScoped<ICheepRepository, CheepRepository>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(); // Added to allow the API specified routes to allow the HTTP get/post methods
 
 // To use HTTP Session cookies to handle if a user is logged into our system
 builder.Services.AddDistributedMemoryCache();

@@ -10,10 +10,13 @@
 
 using System.ComponentModel.DataAnnotations;
 using Chirp.Core;
+using Chirp.Infrastructure;
+using Chirp.Infrastructure.Interfaces;
 using Chirp.Web.MiniTwit_Stub.Attributes;
 using Chirp.Web.MiniTwit_Stub.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -27,10 +30,18 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
     { 
         
         private readonly UserManager<Author> _userManager;
-        public MinitwitApiController(UserManager<Author> userManager)
+        private readonly IAuthorService _authorService;
+        private readonly CheepDbContext _db;
+
+        
+
+        public MinitwitApiController(UserManager<Author> userManager, IAuthorService authorService, CheepDbContext db)
         {
             _userManager = userManager;
+            _authorService = authorService;
+            _db = db;
         }
+
         
         
         /// <summary>
@@ -50,15 +61,57 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
         [SwaggerOperation("GetFollow")]
         [SwaggerResponse(statusCode: 200, type: typeof(FollowsResponse), description: "Success")]
         [SwaggerResponse(statusCode: 403, type: typeof(ErrorResponse), description: "Unauthorized - Must include correct Authorization header")]
-        public virtual IActionResult GetFollow([FromRoute (Name = "username")][Required]string username, [FromHeader (Name = "Authorization")][Required()]string authorization, [FromQuery (Name = "latest")]int? latest, [FromQuery (Name = "no")]int? no)
+        public virtual IActionResult GetFollow([FromRoute (Name = "username")][Required]string username, 
+            [FromHeader (Name = "Authorization")][Required()]string authorization, 
+            [FromQuery (Name = "latest")]int? latest, 
+            [FromQuery (Name = "no")]int? no)
         {
+            
+            //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(403, default);
+            if (authorization != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
+            {
+                return StatusCode(403, new ErrorResponse
+                {
+                    Status = 403,
+                    ErrorMsg = "You are not authorized to use this resource!"
+                });
+            }
+            
+            //TODO: Uncomment the next line to return response 404 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+            // return StatusCode(404);
+            var user = _userManager.FindByNameAsync(username).Result;
+            if (user == null)
+            {
+                return StatusCode(404, new ErrorResponse
+                {
+                    Status = 404,
+                    ErrorMsg = "No user found with this name!"
+                });            
+            }
 
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default);
-            //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(403, default);
-            //TODO: Uncomment the next line to return response 404 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(404);
+            
+            var follows = _db.Follows
+                .AsNoTracking()
+                .Where(f => f.FollowsId == user.Id)
+                .Join(
+                    _db.Users.AsNoTracking(),
+                    f => f.FollowedById,
+                    a => a.Id,
+                    (f, a) => a.UserName
+                )
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .ToList()!;
+
+            return StatusCode(200, new FollowsResponse
+                { Follows = follows });
+            
+            
+            
+            
+            
             string exampleJson = null;
             exampleJson = "{\n  \"follows\" : [ \"Helge\", \"John\" ]\n}";
             exampleJson = "{\n  \"error_msg\" : \"You are not authorized to use this resource!\",\n  \"status\" : 403\n}";
