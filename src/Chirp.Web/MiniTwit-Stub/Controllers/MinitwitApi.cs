@@ -17,6 +17,7 @@ using Chirp.Web.MiniTwit_Stub.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -294,7 +295,7 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
             
             return StatusCode(200, msgs);
             
-            
+            /*
             string exampleJson = null;
             exampleJson = "[ {\n  \"pub_date\" : \"2019-12-01 12:00:00\",\n  \"user\" : \"Helge\",\n  \"content\" : \"Hello, World!\"\n}, {\n  \"pub_date\" : \"2019-12-01 12:00:00\",\n  \"user\" : \"Helge\",\n  \"content\" : \"Hello, World!\"\n} ]";
             exampleJson = "{\n  \"error_msg\" : \"You are not authorized to use this resource!\",\n  \"status\" : 403\n}";
@@ -304,6 +305,8 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
             : default;
             //TODO: Change the data returned
             return new ObjectResult(example);
+            
+            */
         }
 
         /// <summary>
@@ -323,18 +326,78 @@ namespace Chirp.Web.MiniTwit_Stub.Controllers
         [ValidateModelState]
         [SwaggerOperation("PostFollow")]
         [SwaggerResponse(statusCode: 403, type: typeof(ErrorResponse), description: "Unauthorized - Must include correct Authorization header")]
-        public virtual IActionResult PostFollow([FromRoute (Name = "username")][Required]string username, [FromHeader (Name = "Authorization")][Required()]string authorization, [FromBody]FollowAction payload, [FromQuery (Name = "latest")]int? latest)
+        public virtual async Task<IActionResult> PostFollow(
+    [FromRoute(Name = "username")][Required] string username,
+    [FromHeader(Name = "Authorization")][Required] string authorization,
+    [FromBody] FollowAction payload,
+    [FromQuery(Name = "latest")] int? latest)
+{
+    if (authorization != "Basic c2ltdWxhdG9yOnN1cGVyX3NhZmUh")
+    {
+        return StatusCode(403, new ErrorResponse
         {
+            Status = 403,
+            ErrorMsg = "You are not authorized to post follow username"
+        });
+    }
 
-            //TODO: Uncomment the next line to return response 204 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(204);
-            //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(403, default);
-            //TODO: Uncomment the next line to return response 404 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(404);
+    var actor = await _userManager.FindByNameAsync(username);
+    if (actor == null)
+    {
+        return StatusCode(404, new ErrorResponse
+        {
+            Status = 404,
+            ErrorMsg = "no such user is found"
+        });
+    }
 
-            throw new NotImplementedException();
+    var followTarget = payload?.Follow?.Trim();
+    var unfollowTarget = payload?.Unfollow?.Trim();
+
+    var target = followTarget ?? unfollowTarget;
+
+    // invalid if: both empty OR both set
+    if (string.IsNullOrEmpty(followTarget) == string.IsNullOrEmpty(unfollowTarget))
+        return BadRequest(new ErrorResponse { Status = 400, ErrorMsg = "Provide exactly one of follow/unfollow." });
+
+    var targetUser = await _userManager.FindByNameAsync(target!);
+    if (targetUser == null)
+    {
+        return StatusCode(404, new ErrorResponse
+        {
+            Status = 404,
+            ErrorMsg = "Cannot follow non existing user"
+        });
+    }
+
+    var actorId = await _userManager.GetUserIdAsync(actor);
+    var targetId = await _userManager.GetUserIdAsync(targetUser);
+
+    if (!string.IsNullOrEmpty(followTarget))
+    {
+        var exists = await _db.Follows.AnyAsync(f =>
+            f.FollowedById == targetId && f.FollowsId ==  actorId);
+
+        if (!exists)
+        {
+            _db.Follows.Add(new Follows()
+            {
+                FollowedById = targetId,
+                FollowsId = actorId
+            });
+
+            await _db.SaveChangesAsync();
         }
+    }
+    else
+    {
+        await _db.Follows
+            .Where(f => f.FollowedById == targetId && f.FollowsId == actorId)
+            .ExecuteDeleteAsync();
+    }
+
+    return NoContent();
+}
 
         /// <summary>
         /// 
