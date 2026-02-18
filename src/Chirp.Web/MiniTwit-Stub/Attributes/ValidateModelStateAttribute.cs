@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Org.OpenAPITools.Attributes
+namespace Chirp.Web.MiniTwit_Stub.Attributes
 {
     /// <summary>
     /// Model state validation attribute
