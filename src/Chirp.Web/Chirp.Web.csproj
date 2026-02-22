@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <Folder Include="Areas\Identity\Data\" />
+    <Folder Include="data\" />
     <Folder Include="Images\" />
     <Folder Include="MiniTwit-Stub\" />
   </ItemGroup>

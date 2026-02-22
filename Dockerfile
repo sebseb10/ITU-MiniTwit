@@ -15,13 +15,11 @@ WORKDIR /app
 COPY --from=build /app/publish .
 #Mabey remake this, creates a foler for Database since original db path was ../ 
 #which takes the program out of the docker container
-RUN mkdir -p Chirp.Infrastructure
-
-ENV ASPNETCORE_URLS=http://+:8080
-
-# sets ASP enviroment to Development so it does not trigger the .isproduction 
-ENV ASPNETCORE_ENVIRONMENT=Development
-
+RUN mkdir -p data
+ENV ASPNETCORE_URLS=http://+:5001
 EXPOSE 8080
+
+
+
 
 ENTRYPOINT ["dotnet", "Chirp.Web.dll"]
