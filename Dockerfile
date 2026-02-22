@@ -17,7 +17,7 @@ COPY --from=build /app/publish .
 #which takes the program out of the docker container
 RUN mkdir -p data
 ENV ASPNETCORE_URLS=http://+:5001
-EXPOSE 8080
+EXPOSE 5001
 
 
 
