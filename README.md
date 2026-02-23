@@ -1,6 +1,6 @@
 # ITU-MiniTwit
 
-Simple step-by-step guide to provision a VM and deploy ITU-MiniTwit (web app + simulator API).
+guide to provision a VM and deploy ITU-MiniTwit (web app + simulator API).
 
 ## 1. Clone
 
@@ -43,13 +43,9 @@ export DEPLOY_HOST="<DROPLET_IP>"
 Open in browser:
 
 - App: `http://64.225.111.92:5001/`
-- API: `http://64.225.111.92:5001/latest`
+- API: `http://64.225.111.92:5001/latest` // Unsure if this is implemetned correctly. 
 
 Quick API check to check Latest endpoint:
 ```bash
 curl -i http://64.225.111.92:5001/latest
 ```
-
-## Notes
-
-- If you accidentally created multiple droplets, delete extras to avoid charges.
