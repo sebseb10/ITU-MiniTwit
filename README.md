@@ -42,10 +42,14 @@ export DEPLOY_HOST="<DROPLET_IP>"
 
 Open in browser:
 
-- App: `http://64.225.111.92:5001/`
-- API: `http://64.225.111.92:5001/latest` // Unsure if this is implemetned correctly. 
+- App: `<DROPLET_IP>:5001/`
+- API: `<DROPLET_IP>/latest` // Unsure if this is implemetned correctly / what is expected?. 
 
-Quick API check to check Latest endpoint:
+
+current website : 
+- App: `http://64.225.111.92:5001/`
+- API: `http://64.225.111.92:5001/latest
+Quick API check to check website Latest endpoint is up:
 ```bash
 curl -i http://64.225.111.92:5001/latest
 ```
