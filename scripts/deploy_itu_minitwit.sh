@@ -16,6 +16,7 @@ DEPLOY_USER="${DEPLOY_USER:-root}"
 DEPLOY_SSH_KEY="${DEPLOY_SSH_KEY:-$HOME/.ssh/id_ed25519}"
 REMOTE_APP_DIR="${REMOTE_APP_DIR:-/opt/itu-minitwit}"
 APP_PORT="${APP_PORT:-5001}"
+SIM_PORT="${SIM_PORT:-5002}"
 
 SSH_OPTS=(
   -i "${DEPLOY_SSH_KEY}"
@@ -63,14 +64,14 @@ echo "Starting application with Docker Compose..."
 ssh "${SSH_OPTS[@]}" "${REMOTE}" "cd '${REMOTE_APP_DIR}' && mkdir -p data && docker compose up -d --build"
 
 APP_URL="http://${DEPLOY_HOST}:${APP_PORT}"
-SIM_API_URL="${APP_URL}/latest"
+SIM_API_URL="http://${DEPLOY_HOST}:${SIM_PORT}/openapi/1.0/openapi.json"
 
 echo "Checking simulator API endpoint..."
 for _ in $(seq 1 20); do
   if curl -fsS "${SIM_API_URL}" >/dev/null 2>&1; then
     echo "Deployment finished."
     echo "App URL: ${APP_URL}"
-    echo "Simulator API URL (example endpoint): ${SIM_API_URL}"
+    echo "Simulator OpenAPI URL: ${SIM_API_URL}"
     exit 0
   fi
   sleep 2
