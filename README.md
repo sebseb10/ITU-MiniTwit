@@ -48,7 +48,7 @@ Open in browser:
 
 current website : 
 - App: `http://64.225.111.92:5001/`
-- API: `http://64.225.111.92:5001/latest
+- API: `http://64.225.111.92:5001/latest`
 Quick API check to check website Latest endpoint is up:
 ```bash
 curl -i http://64.225.111.92:5001/latest
