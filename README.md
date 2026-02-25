@@ -47,9 +47,10 @@ Open in browser:
 
 
 current website : 
-- App: `http://64.225.111.92:5001/`
-- API: `http://64.225.111.92:5001/latest`
+- App: `http://46.101.231.189:5001/`
+- API: `http://46.101.231.189:5001/`
+- to see all API's available see ``http://46.101.231.189:5002/``
 Quick API check to check website Latest endpoint is up:
 ```bash
-curl -i http://64.225.111.92:5001/latest
+curl -i http://46.101.231.189:5001/latest
 ```
