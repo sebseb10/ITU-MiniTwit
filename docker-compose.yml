@@ -2,24 +2,23 @@ version: "3.8"
 
 services:
   chirp-web:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME}/chirp-web:${TAG:-latest}
     ports:
       - "5001:5001"
     environment:
-      - ASPNETCORE_URLS=http://+:5001
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS: http://+:5001
+      - ASPNETCORE_ENVIRONMENT: "Production"
     volumes:
       - ./data:/app/data
     restart: unless-stopped
 
   minitwit-sim-stub:
-    build:
-      context: ./out/itu-minitwit-sim-stub
-      dockerfile: src/Org.OpenAPITools/Dockerfile
+    image: ${DOCKER_USERNAME}/minitwit-sim-stub:${TAG:-latest}
     ports:
       - "5002:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT: "Production"
     restart: unless-stopped
+
+volumes:
+  chirp_data:
