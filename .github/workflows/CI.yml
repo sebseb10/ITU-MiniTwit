@@ -52,7 +52,8 @@ jobs:
         run: dotnet test -c Release --filter "FullyQualifiedName!~End2End"
         env:
           ASPNETCORE_ENVIRONMENT: Testing
-
+  
+  # Testing the release right now!
   publish-and-release-webapp:
     name: Publish and Release Web App
     needs: test
