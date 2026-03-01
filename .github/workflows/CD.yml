@@ -39,3 +39,24 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/itu-minitwit:latest
             ${{ secrets.DOCKER_USERNAME }}/itu-minitwit:${{ github.sha }}
+            
+  Deploy:
+    runs-on: ubuntu-latest
+    needs: build-push
+    steps:
+      - name: Deplot on droplet via SSH
+        uses: appleboy/ssh-action@v1.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            cd /root/minitwit
+            if grep -q '^TAG=' .env; then
+              sed -i 's/^TAG=.*/TAG=${{ github.sha }}/' .env
+            else
+              echo 'TAG=${{ github.sha }}' >> .env
+            fi
+
+            ./deploy.sh 
