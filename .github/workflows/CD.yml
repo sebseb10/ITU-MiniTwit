@@ -51,12 +51,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            set -e
-            cd /root/minitwit
-            if grep -q '^TAG=' .env; then
-              sed -i 's/^TAG=.*/TAG=${{ github.sha }}/' .env
-            else
-              echo 'TAG=${{ github.sha }}' >> .env
-            fi
-
-            ./deploy.sh 
+            set -euo pipefail
+            cd /opt/itu-minitwit
+            TAG=${{ github.sha }} docker compose pull
+            TAG=${{ github.sha }} docker compose up -d --remove-orphans
+            docker image prune -f
