@@ -51,8 +51,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            set -euo pipefail
-            cd /opt/itu-minitwit
-            TAG=${{ github.sha }} docker compose pull
-            TAG=${{ github.sha }} docker compose up -d --remove-orphans
-            docker image prune -f
+            script: |
+              set -euo pipefail
+              cd /opt/itu-minitwit
+              TAG=${{ github.sha }} ./deploy.sh
