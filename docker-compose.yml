@@ -2,7 +2,7 @@ services:
   itu-minitwit:
     image: ${DOCKER_USERNAME}/itu-minitwit:${TAG:-latest}
     ports:
-      - "127.0.0.1:5001:5001"
+      - "5001:5001"
     environment:
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
