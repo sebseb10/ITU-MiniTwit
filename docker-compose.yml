@@ -60,6 +60,7 @@ services:
     restart: unless-stopped
     networks:
       - itu-minitwit-network
+      - monitoring-network
   
   redis:
     image: redis:7
@@ -67,6 +68,8 @@ services:
     
 networks:
   itu-minitwit-network:
+  monitoring-network: 
+    external: true
   
 volumes:
   postgres-data:

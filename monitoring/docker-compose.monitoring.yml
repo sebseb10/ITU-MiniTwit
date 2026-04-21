@@ -42,4 +42,5 @@ volumes:
   
 networks:
   monitoring-network:
+    name: monitoring-network
     
