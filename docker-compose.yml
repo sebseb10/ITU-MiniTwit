@@ -64,9 +64,11 @@ services:
   redis:
     image: redis:7
     container_name: redis
+    
+networks:
+  itu-minitwit-network:
   
 volumes:
   postgres-data:
 
-networks:
-  itu-minitwit-network:
+

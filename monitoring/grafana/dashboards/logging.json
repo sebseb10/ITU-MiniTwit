@@ -130,6 +130,26 @@
           "legendFormat": ""
         }
       ]
+    },
+    {
+      "id": 6,
+      "title": "Grafana Logs",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 10 },
+      "options": {
+        "dedupStrategy": "none",
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{container=\"grafana\"}",
+          "legendFormat": ""
+        }
+      ]
     }
   ]
 }
