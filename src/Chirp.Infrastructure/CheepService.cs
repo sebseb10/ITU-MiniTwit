@@ -55,4 +55,13 @@ public class CheepService : ICheepService
     {
         return await _repository.CreateRecheep(Author, cheepID);
     }
+
+    public Task<bool> HasNextPageCheeps(int currentPage, string? currentUserId = null)
+        => _repository.HasNextPageCheeps(currentPage, currentUserId);
+
+    public Task<bool> HasNextPageFromAuthor(string authorName, int currentPage)
+        => _repository.HasNextPageFromAuthor(authorName, currentPage);
+
+    public Task<bool> HasNextPageFromFollowedAuthor(string userId, int currentPage)
+        => _repository.HasNextPageFromFollowedAuthor(userId, currentPage);
 }

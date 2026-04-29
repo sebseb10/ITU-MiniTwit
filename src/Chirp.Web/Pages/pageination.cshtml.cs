@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using Chirp.Core;
 using Chirp.Infrastructure;
 using Chirp.Infrastructure.Interfaces;
@@ -12,9 +13,8 @@ public class PaginationModel : PageModel
     private readonly ICheepService _service;
     private readonly IAuthorService _authorService;
 
-    // materialized list
     public List<CheepDTO> Cheeps { get; set; } = new();
-
+    public HashSet<string> FollowedUserIds { get; private set; } = new();
     public bool hasNextPage { get; set; }
     public int currentPage { get; set; }
 
@@ -24,16 +24,22 @@ public class PaginationModel : PageModel
         _authorService = authorService;
     }
 
+    private string? GetCurrentUserId() =>
+        User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    public bool IsFollowing(string authorId) => FollowedUserIds.Contains(authorId);
+
     public async Task<IActionResult> OnGetAsync(int index = 1)
     {
         currentPage = index < 1 ? 1 : index;
 
-        string? currentUserId = await GetCurrentUserIdAsync();
+        var currentUserId = GetCurrentUserId();
+
+        if (currentUserId != null)
+            FollowedUserIds = await _authorService.GetFollowedUserIds(currentUserId);
 
         Cheeps = await _service.GetCheeps(currentPage, currentUserId) ?? new List<CheepDTO>();
-
-        var nextPageCheeps = await _service.GetCheeps(currentPage + 1, currentUserId);
-        hasNextPage = nextPageCheeps != null && nextPageCheeps.Any();
+        hasNextPage = await _service.HasNextPageCheeps(currentPage, currentUserId);
 
         return Page();
     }
@@ -43,15 +49,11 @@ public class PaginationModel : PageModel
         if (User.Identity?.IsAuthenticated != true)
             return RedirectToPage();
 
-        var authorName = User.Identity?.Name;
-        if (string.IsNullOrEmpty(authorName))
+        var currentUserId = GetCurrentUserId();
+        if (string.IsNullOrEmpty(currentUserId))
             return RedirectToPage();
 
-        var author = await _authorService.GetAuthorByName(authorName);
-        if (author == null)
-            return RedirectToPage();
-
-        await _service.CreateRecheep(new AuthorDTO { Id = author.Id }, cheepId);
+        await _service.CreateRecheep(new AuthorDTO { Id = currentUserId }, cheepId);
         return RedirectToPage();
     }
 
@@ -100,35 +102,5 @@ public class PaginationModel : PageModel
 
         await _authorService.SaveChangesAsync();
         return RedirectToPage();
-    }
-
-    public bool IsFollowing(string authorName)
-    {
-        var username = User.Identity?.Name;
-        if (string.IsNullOrEmpty(username)) return false;
-
-        var currentUser =
-            _authorService.GetAuthorEntityByName(username).Result;
-        var followTarget =
-            _authorService.GetAuthorEntityByName(authorName).Result;
-
-        if (currentUser == null || followTarget == null)
-            return false;
-
-        return currentUser.Following
-            .Any(f => f.FollowedById == followTarget.Id);
-    }
-
-    private async Task<string?> GetCurrentUserIdAsync()
-    {
-        if (User.Identity?.IsAuthenticated != true)
-            return null;
-
-        var username = User.Identity?.Name;
-        if (string.IsNullOrEmpty(username))
-            return null;
-
-        var author = await _authorService.GetAuthorByName(username);
-        return author?.Id;
     }
 }

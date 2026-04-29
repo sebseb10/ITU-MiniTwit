@@ -15,55 +15,27 @@ public class AuthorRepository : IAuthorRepository
 
     public async Task<AuthorDTO> GetAuthorByName(string? name)
     {
-
         if (string.IsNullOrWhiteSpace(name))
-        {
             throw new InvalidOperationException("Name cannot be null or empty");
-        }
-        try
-        {
-            var author = await _dbContext.Authors
-                .Include(a => a.Cheeps)
-                .FirstAsync(a => a.UserName == name);
 
-            return new AuthorDTO
-            {
-                Id = author.Id,
-                Name = author.UserName ?? string.Empty,
-                Email = author.Email ?? string.Empty,
-                Cheeps = author.Cheeps
-            };
-        }
-        catch (InvalidOperationException)
-        {
-            throw new InvalidOperationException("No such author with name: " + name);
-        }
+        var author = await _dbContext.Authors
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.UserName == name)
+            ?? throw new InvalidOperationException("No such author with name: " + name);
+
+        return new AuthorDTO { Id = author.Id, Name = author.UserName ?? string.Empty, Email = author.Email ?? string.Empty };
     }
 
     public async Task<AuthorDTO> GetAuthorByEmail(string? email)
     {
         if (string.IsNullOrWhiteSpace(email))
-        {
             throw new InvalidOperationException("Email cannot be null or empty");
-        }
-        try
-        {
-            var author = await _dbContext.Authors
-                .Include(a => a.Cheeps)
-                .FirstAsync(a => a.Email == email);
 
-            return new AuthorDTO
-            {
-                Id = author.Id,
-                Name = author.UserName ?? string.Empty,
-                Email = author.Email ?? string.Empty,
-                Cheeps = author.Cheeps
-            };
-        }
+        var author = await _dbContext.Authors
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Email == email)
+            ?? throw new InvalidOperationException("No such author with email: " + email);
 
-        catch (InvalidOperationException)
-        {
-            throw new InvalidOperationException("No such author with email: " + email);
-        }
+        return new AuthorDTO { Id = author.Id, Name = author.UserName ?? string.Empty, Email = author.Email ?? string.Empty };
     }
 }

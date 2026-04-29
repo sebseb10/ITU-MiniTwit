@@ -27,10 +27,20 @@ public class AuthorService : IAuthorService
 
     public Task<Author?> GetAuthorEntityByName(string name)
     {
+        // Only load the Following join table rows (IDs), not the full FollowedByAuthor entities
         return _context.Authors
             .Include(a => a.Following)
-            .ThenInclude(f => f.FollowedByAuthor)
             .FirstOrDefaultAsync(a => a.UserName == name);
+    }
+
+    public async Task<HashSet<string>> GetFollowedUserIds(string userId)
+    {
+        var ids = await _context.Follows
+            .Where(f => f.FollowsId == userId)
+            .Select(f => f.FollowedById)
+            .AsNoTracking()
+            .ToListAsync();
+        return ids.ToHashSet();
     }
 
     public Task SaveChangesAsync()

@@ -12,6 +12,7 @@ public class CheepDTO
     public DateTime Timestamp { get; set; }
 
     public string AuthorName { get; set; } = string.Empty;
+    public string AuthorId { get; set; } = string.Empty;
     public string? ProfilePicturePath { get; set; }
 
     public bool IsRecheepedByCurrentUser { get; set; }
