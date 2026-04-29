@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Chirp.Infrastructure;
 using Chirp.Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -31,19 +32,17 @@ public class UserTimelinePaginationModel : PageModel
 
         if (IsOwnTimeline)
         {
-            var currentUser = await _authorService.GetAuthorEntityByName(currentUserName!);
-            if (currentUser != null)
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (currentUserId != null)
             {
-                Cheeps = await _cheepService.GetCheepsFromFollowedAuthor(currentUser.Id, CurrentPage);
-                HasNextPage = (await _cheepService
-                    .GetCheepsFromFollowedAuthor(currentUser.Id, CurrentPage + 1)).Any();
+                Cheeps = await _cheepService.GetCheepsFromFollowedAuthor(currentUserId, CurrentPage);
+                HasNextPage = await _cheepService.HasNextPageFromFollowedAuthor(currentUserId, CurrentPage);
             }
         }
         else
         {
             Cheeps = await _cheepService.GetCheepsFromAuthor(author, CurrentPage);
-            HasNextPage = (await _cheepService
-                .GetCheepsFromAuthor(author, CurrentPage + 1)).Any();
+            HasNextPage = await _cheepService.HasNextPageFromAuthor(author, CurrentPage);
         }
 
         return Page();

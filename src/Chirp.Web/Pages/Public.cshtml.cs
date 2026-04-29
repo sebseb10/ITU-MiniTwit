@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using Chirp.Core;
 using Chirp.Infrastructure;
 using Chirp.Infrastructure.Interfaces;
@@ -13,6 +14,7 @@ public class PublicModel : PageModel
     private readonly IAuthorService _authorService;
 
     public List<CheepDTO> Cheeps { get; set; } = new();
+    public HashSet<string> FollowedUserIds { get; private set; } = new();
 
     [BindProperty]
     [StringLength(160, ErrorMessage = "The {0} must be at max {1} characters long.")]
@@ -24,25 +26,21 @@ public class PublicModel : PageModel
         _authorService = authorService;
     }
 
-    private async Task<string?> GetCurrentUserIdAsync()
-    {
-        if (User.Identity?.IsAuthenticated != true)
-            return null;
+    // User ID is stored in Claims — no DB call needed
+    private string? GetCurrentUserId() =>
+        User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var username = User.Identity?.Name;
-        if (string.IsNullOrEmpty(username))
-            return null;
-
-        var author = await _authorService.GetAuthorByName(username);
-        return author?.Id;
-    }
+    // O(1) in-memory check against the set loaded once per request
+    public bool IsFollowing(string authorId) => FollowedUserIds.Contains(authorId);
 
     public async Task<IActionResult> OnGetAsync()
     {
-        int currentPage = 1;
-        var currentUserId = await GetCurrentUserIdAsync();
+        var currentUserId = GetCurrentUserId();
 
-        Cheeps = await _service.GetCheeps(currentPage, currentUserId);
+        if (currentUserId != null)
+            FollowedUserIds = await _authorService.GetFollowedUserIds(currentUserId);
+
+        Cheeps = await _service.GetCheeps(1, currentUserId);
         return Page();
     }
 
@@ -51,23 +49,22 @@ public class PublicModel : PageModel
         if (User.Identity?.IsAuthenticated != true)
             return Redirect("/");
 
-        var authorName = User.Identity?.Name;
-        var author = await _authorService.GetAuthorByName(authorName);
-
-        if (author == null)
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
             return Redirect("/");
 
-        await _service.CreateRecheep(new AuthorDTO { Id = author.Id }, cheepId);
-
+        await _service.CreateRecheep(new AuthorDTO { Id = currentUserId }, cheepId);
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var currentUserId = await GetCurrentUserIdAsync();
+        var currentUserId = GetCurrentUserId();
 
         if (!ModelState.IsValid)
         {
+            if (currentUserId != null)
+                FollowedUserIds = await _authorService.GetFollowedUserIds(currentUserId);
             Cheeps = await _service.GetCheeps(1, currentUserId);
             return Page();
         }
@@ -124,28 +121,14 @@ public class PublicModel : PageModel
                 FollowsId = currentUser.Id,
                 FollowedById = followTarget.Id
             });
-
-            await _authorService.SaveChangesAsync();
         }
         else
         {
             currentUser.Following.RemoveAll(f => f.FollowedById == followTarget.Id);
-            await _authorService.SaveChangesAsync();
         }
 
+        await _authorService.SaveChangesAsync();
         return RedirectToPage();
-    }
-
-    public bool IsFollowing(string authorName)
-    {
-        var username = User.Identity?.Name;
-        if (string.IsNullOrEmpty(username)) return false;
-
-        var currentUser = _authorService.GetAuthorEntityByName(username).Result;
-        var followTarget = _authorService.GetAuthorEntityByName(authorName).Result;
-        if (currentUser == null || followTarget == null) return false;
-
-        return currentUser.Following.Any(f => f.FollowedById == followTarget.Id);
     }
 
     public bool LoginStatus()
