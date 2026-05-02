@@ -1,0 +1,109 @@
+version: "3.8"
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+    networks:
+      - monitoring-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == monitoring
+      restart_policy:
+        condition: on-failure
+
+  grafana:
+    image: grafana/grafana:12.1
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    configs:
+      - source: grafana_datasources
+        target: /etc/grafana/provisioning/datasources/datasources.yml
+      - source: grafana_dashboards_config
+        target: /etc/grafana/provisioning/dashboards/dashboards.yml
+      - source: grafana_dashboard_main
+        target: /etc/grafana/provisioning/dashboards/dashboard.json
+      - source: grafana_dashboard_logging
+        target: /etc/grafana/provisioning/dashboards/logging.json
+    networks:
+      - monitoring-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == monitoring
+      restart_policy:
+        condition: on-failure
+
+  loki:
+    image: grafana/loki:3.5.0
+    ports:
+      - "3100:3100"
+    configs:
+      - source: loki_config
+        target: /etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == monitoring
+      restart_policy:
+        condition: on-failure
+
+  alloy:
+    image: grafana/alloy:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    configs:
+      - source: alloy_config
+        target: /etc/alloy/config.alloy
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+    networks:
+      - monitoring-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.role == monitoring
+      restart_policy:
+        condition: on-failure
+
+configs:
+  prometheus_config:
+    file: ./monitoring/prometheus/prometheus.yml
+  loki_config:
+    file: ./monitoring/loki/loki-config.yml
+  alloy_config:
+    file: ./monitoring/alloy/config.alloy
+  grafana_datasources:
+    file: ./monitoring/grafana/datasources/datasources.yml
+  grafana_dashboards_config:
+    file: ./monitoring/grafana/dashboards/dashboards.yml
+  grafana_dashboard_main:
+    file: ./monitoring/grafana/dashboards/dashboard.json
+  grafana_dashboard_logging:
+    file: ./monitoring/grafana/dashboards/logging.json
+
+volumes:
+  grafana-storage:
+    driver: local
+
+networks:
+  monitoring-network:
+    driver: overlay

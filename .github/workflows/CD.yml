@@ -52,24 +52,19 @@ jobs:
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
+          echo "${{ secrets.SSH_KEY_APP2 }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          echo "${{ secrets.SSH_KEY_APP2 }}" > ~/.ssh/deploy_key_app2
-          chmod 600 ~/.ssh/deploy_key_app2
-      
-      - name: Bootstrap droplet app1
+
+      - name: Bootstrap swarm manager
         uses: appleboy/ssh-action@v1.2.5
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: ${{ secrets.SSH_HOST_APP2 }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.SSH_KEY_APP2 }}
           script: |
-            if ! command -v docker >/dev/null 2>&1; then
-              curl -fsSL https://raw.githubusercontent.com/sebseb10/ITU-MiniTwit/main/scripts/bootstrap.sh | bash
-            fi
             mkdir -p /opt/itu-minitwit
-            
-      - name: Sync files to droplet app1
+
+      - name: Sync files to swarm manager
         run: |
           rsync -az --delete \
             --exclude '.git' \
@@ -78,63 +73,9 @@ jobs:
             --exclude 'data' \
             --exclude '.env' \
             -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key" \
-            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/itu-minitwit/
-          
-      - name: Write production .env on droplet app 1
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cat > /opt/itu-minitwit/.env <<'EOF'
-            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
-            TAG=${{ github.sha }}
-            ASPNETCORE_ENVIRONMENT=Production
-            ASPNETCORE_URLS=http://+:5001
-            ConnectionStrings__DefaultConnection=${{ secrets.DO_CONNECTION_STRING }}
-            ConnectionStrings__Redis=${{ secrets.DO_REDIS_CONNECTION_STRING }}
-            EOF
-            
-      - name: Run deploy script app1
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /opt/itu-minitwit
-            chmod +x scripts/deploy.sh
-            TAG=${{ github.sha }} DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} bash scripts/deploy.sh
-        
-      - name: Health check for app 1
-        run: |
-          curl --retry 10 --retry-delay 5 --retry-connrefused https://itu-minitwit.duckdns.org 
-          
-      - name: Bootstrap droplet app2
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.SSH_HOST_APP2 }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY_APP2 }}
-          script: |
-            if ! command -v docker >/dev/null 2>&1; then
-              curl -fsSL https://raw.githubusercontent.com/sebseb10/ITU-MiniTwit/main/scripts/bootstrap.sh | bash
-            fi
-            mkdir -p /opt/itu-minitwit
-
-      - name: Sync files to droplet app2
-        run: |
-          rsync -az --delete \
-            --exclude '.git' \
-            --exclude 'bin' \
-            --exclude 'obj' \
-            --exclude 'data' \
-            --exclude '.env' \
-            -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key_app2" \
             ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST_APP2 }}:/opt/itu-minitwit/
-          
-      - name: Write production .env on droplet app 2
+
+      - name: Write production .env on swarm manager
         uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.SSH_HOST_APP2 }}
@@ -150,7 +91,7 @@ jobs:
             ConnectionStrings__Redis=${{ secrets.DO_REDIS_CONNECTION_STRING }}
             EOF
 
-      - name: Run deploy script app2
+      - name: Deploy minitwit stack
         uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.SSH_HOST_APP2 }}
@@ -158,52 +99,31 @@ jobs:
           key: ${{ secrets.SSH_KEY_APP2 }}
           script: |
             cd /opt/itu-minitwit
-            chmod +x scripts/deploy.sh
-            TAG=${{ github.sha }} DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} bash scripts/deploy.sh
+            docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            set -a; source .env; set +a
+            docker stack deploy -c docker-stack.yml minitwit --with-registry-auth
+            docker image prune -f || true
 
-      - name: Health check for app 2
+      - name: Health check
         run: |
-          curl --retry 10 --retry-delay 5 --retry-connrefused http://46.101.206.181:5001
-      
+          curl --retry 10 --retry-delay 5 --retry-connrefused https://itu-minitwit.duckdns.org
+
   Deploy-Monitoring:
     runs-on: ubuntu-latest
-    needs: build-push
+    needs: Deploy
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.MONITORING_SSH_KEY  }}" > ~/.ssh/deploy_key
+          echo "${{ secrets.SSH_KEY_APP2 }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          
-          
-      - name: Bootstrap droplet
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.MONITORING_SSH_HOST }}
-          username: ${{ secrets.MONITORING_SSH_USER }}
-          key: ${{ secrets.MONITORING_SSH_KEY }}
-          script: |
-            if ! command -v docker >/dev/null 2>&1; then
-              curl -fsSL https://raw.githubusercontent.com/sebseb10/ITU-MiniTwit/main/scripts/bootstrap.sh | bash
-            fi
-            mkdir -p /opt/monitoring
-          
-      - name: Sync files to monitoring droplet
-        run: |
-          rsync -az --delete \
-            --exclude '.git' \
-            -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key" \
-            ./ ${{ secrets.MONITORING_SSH_USER }}@${{ secrets.MONITORING_SSH_HOST }}:/opt/monitoring/
 
-      - name: Start monitoring stack
+      - name: Deploy monitoring stack
         uses: appleboy/ssh-action@v1.2.5
         with:
-          host: ${{ secrets.MONITORING_SSH_HOST }}
-          username: ${{ secrets.MONITORING_SSH_USER }}
-          key: ${{ secrets.MONITORING_SSH_KEY }}
+          host: ${{ secrets.SSH_HOST_APP2 }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY_APP2 }}
           script: |
-            cd /opt/monitoring/monitoring
-            docker compose -f docker-compose.monitoring.yml up -d --remove-orphans
+            cd /opt/itu-minitwit
+            docker stack deploy -c docker-stack.monitoring.yml monitoring
