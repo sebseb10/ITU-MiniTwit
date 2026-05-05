@@ -41,7 +41,8 @@ jobs:
           fi
 
       - name: Debug report_only output
-        run: echo "report_only: ${{ steps.report_only.outputs.report_only }}"
+        run: |
+          echo "report_only: ${{ steps.report_only.outputs.report_only }}"
 
   # ─── latex ────────────────────────────────────────────────────────────────
   latex:
