@@ -1,0 +1,73 @@
+@startuml
+title ITU-MiniTwit System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 180
+skinparam maxMessageSize 120
+
+actor "Web User" as WebUser
+actor "Course Simulator" as Simulator
+
+package "Chirp.Web" {
+  component "Razor Pages UI\nPublic timeline, user timeline,\nlogin/register, profile pages" as RazorUI
+  component "Identity Pages\nASP.NET Core Identity" as IdentityUI
+  component "MiniTwit Simulator API\n/latest, /register,\n/msgs, /fllws" as SimulatorAPI
+  component "ASP.NET Core Pipeline\nRouting, authentication,\nsessions, logging, metrics" as WebPipeline
+}
+
+package "Chirp.Infrastructure" {
+  component "AuthorService" as AuthorService
+  component "CheepService" as CheepService
+  component "AuthorRepository" as AuthorRepository
+  component "CheepRepository" as CheepRepository
+  database "CheepDbContext\nEF Core / Npgsql" as DbContext
+}
+
+package "Chirp.Core" {
+  component "Domain Model\nAuthor, Cheep,\nFollows, Recheep" as DomainModel
+}
+
+database "PostgreSQL\nApplication database" as PostgreSQL
+database "Redis\nDistributed cache/session support" as Redis
+component "Prometheus\nScrapes /metrics" as Prometheus
+component "Application Logs\nstdout/stderr" as Logs
+
+WebUser --> RazorUI : Uses web UI
+WebUser --> IdentityUI : Registers / logs in
+Simulator --> SimulatorAPI : Calls simulator API
+
+RazorUI --> WebPipeline
+IdentityUI --> WebPipeline
+SimulatorAPI --> WebPipeline
+
+RazorUI --> CheepService
+RazorUI --> AuthorService
+SimulatorAPI --> AuthorService
+SimulatorAPI --> DbContext
+
+CheepService --> CheepRepository
+AuthorService --> AuthorRepository
+CheepRepository --> DbContext
+AuthorRepository --> DbContext
+
+DbContext --> PostgreSQL : Reads/writes data
+WebPipeline --> Redis : Cache/session configuration
+WebPipeline --> Prometheus : Exposes /metrics
+WebPipeline --> Logs : Writes structured request/error logs
+
+DbContext ..> DomainModel : Maps entities
+
+note right of SimulatorAPI
+  The simulator API is part of the
+  deployed web application and shares
+  the same application database.
+end note
+
+note bottom of WebPipeline
+  Cross-cutting DevOps concerns:
+  authentication, sessions, request logging,
+  exception logging, and Prometheus metrics.
+end note
+
+@enduml
