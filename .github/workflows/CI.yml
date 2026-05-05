@@ -22,7 +22,7 @@ jobs:
     outputs:
       report_only: ${{ steps.report_only.outputs.report_only }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -32,6 +32,13 @@ jobs:
             code:
               - '**'
               - '!Report/**'
+              - '!Report/*.pdf'
+              - '!Report/*.fdb_latexmk'
+              - '!Report/*.synctex.gz'
+              - '!Report/*.aux'
+              - '!Report/*.log'
+              - '!Report/*.out'
+              - '!Report/*.toc'
       - id: report_only
         shell: bash
         run: |
@@ -48,7 +55,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.report_only == 'true' || startsWith(github.ref, 'refs/tags/')
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
       - name: Compile LaTeX
         uses: xu-cheng/latex-action@v3
         with:
@@ -67,10 +74,10 @@ jobs:
     if: needs.changes.outputs.report_only == 'false'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.x
 
@@ -90,10 +97,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.x
 
@@ -126,10 +133,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.x
 
@@ -147,12 +154,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.x
 
@@ -175,7 +182,7 @@ jobs:
             /o:"sebseb10" \
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.cs.opencover.ReportsPaths="**/coverage.opencover.xml" \
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
             /d:sonar.exclusions="**/Migrations/**,**/DbInitializer.cs"
 
       - name: Build
@@ -218,10 +225,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.x
 
