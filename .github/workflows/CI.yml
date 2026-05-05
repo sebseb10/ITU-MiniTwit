@@ -16,7 +16,7 @@ permissions:
 jobs:
 
   # ─── detect what changed ──────────────────────────────────────────────────
-  changes:
+ changes:
     name: Detect changed paths
     runs-on: ubuntu-latest
     outputs:
@@ -39,6 +39,12 @@ jobs:
               - '!Report/*.log'
               - '!Report/*.out'
               - '!Report/*.toc'
+      - name: Debug filter outputs
+        run: |
+          echo "Report filter: ${{ steps.filter.outputs.Report }}"
+          echo "code filter: ${{ steps.filter.outputs.code }}"
+          echo "Report files: ${{ steps.filter.outputs.Report_files }}"
+          echo "code files: ${{ steps.filter.outputs.code_files }}"
       - id: report_only
         shell: bash
         run: |
@@ -47,7 +53,9 @@ jobs:
           else
             echo "report_only=false" >> $GITHUB_OUTPUT
           fi
-
+      - name: Debug report_only output
+        run: |
+          echo "report_only: ${{ steps.report_only.outputs.report_only }}"
   # ─── latex ────────────────────────────────────────────────────────────────
   latex:
     name: Build PDF Report
