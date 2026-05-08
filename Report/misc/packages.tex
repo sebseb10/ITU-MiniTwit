@@ -2,10 +2,8 @@
 \def\UrlFont{\rmfamily}
 
 \usepackage{enumitem}
-% [noitemsep,topsep=0pt,labelwidth=0pt,listparindent=-30pt,leftmargin=30pt,rightmargin=30pt]
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
 \usepackage{graphicx}
 \graphicspath{{./images/}}
 
@@ -15,10 +13,24 @@
 \usepackage{caption}
 \usepackage{xspace}
 \usepackage{float}
-\usepackage{marginnote}
 \usepackage{tabularx}
-\usepackage{changepage, threeparttable}
-\usepackage{attrib}
-\usepackage{svg}
 \usepackage{multirow}
-\usepackage[normalem]{ulem} % for strike through text \sout{asd}
+\usepackage[normalem]{ulem}
+
+\usepackage{listings}
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red}
+}
+
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+% Authorship annotation: \byline{Name(s)}
+\newcommand{\byline}[1]{\noindent\textit{\small Authors: #1}\par\medskip}
