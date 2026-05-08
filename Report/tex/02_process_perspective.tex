@@ -147,10 +147,10 @@ As shown in \cref{fig:sonarcloud}, there are still a number of security vulnerab
 our load balencer distributes traffic across replicas, and automatically reroutes requests away from any node that becomes unavailable/crash.
 Crashed containers are restarted automatically via the on-failure restart policy.
 \\\\
-\noindent A shared \textbf{Redis} instance acts as a common cache and session store, which ensures consistent responses regardless of which replica handles a request.
+\noindent A \textbf{Redis} instance shared between replicas acts as a common cache, which ensures consistency within the returned data regardless of which replica handles the request.
 \\
-\noindent Deployments use rolling updates, starting a new container before stopping the old one to avoid downtime.
-repeating this process for each node ensures that at least one instance is always available to serve requests during deployments.
+\noindent Deployments are made using rolling updates, starting a new docker container before stopping the previous one to avoid downtime.
+this process is repeated for each node with a 10 second delay to ensure that at least one instance is always available to serve requests during deployments to reduced downtime of the system.
 
 % How do you handle availability (replication, health checks, restarts)?
 % How do you scale (horizontal scaling, load balancing)?
