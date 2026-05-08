@@ -49,12 +49,16 @@ While writing the report we itterativly extended the CI pipeline to check which 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{CD.png}
-    \caption{CD pipeline (\texttt{CD.yml}).}
+    \caption{CD pipeline}
     \label{fig:cd}
 \end{figure}
 
-\noindent To ensure load balancing and high availability of the application, we extended the CD pipeline to
-deploy the application using \textbf{Docker Swarm}, which deploys the application as a swarm with multiple replica nodes caching using \textbf{Redis}. The detailed steps of the \textit{Deploy} job are shown in \cref{fig:cd-deploy}:
+\noindent To ensure high availability of the application, we extended the CD pipeline to
+deploy the application using \textbf{Docker Swarm}, which deploys the application as a swarm with multiple replica nodes while a load balencer distributes traffic across the replicas.
+ The application also uses shared \textbf{Redis} which caches data across the replicas.
+ The detailed steps of the \textit{Deploy} job are shown in \cref{fig:cd-deploy}:
+
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.55\linewidth]{CD_DeploySteps.png}
@@ -102,27 +106,26 @@ At the projects end we have the Grafana dashboard organised into five sections, 
 \hyperref{http://165.245.209.232:3000/d/itu-minitwit-logs/itu-minitwit-logs?orgId=1&from=now-1h&to=now&timezone=browser&var-container=$__all&var-level=.%2A&refresh=30s}{}{}{Link to Grafana logging dashboard}
 
 \noindent Application logs are aggregated using \textbf{Loki} and collected by
-\textbf{Grafana Alloy}. Each log line is labelled with the container
-name, service name, stream (\texttt{stdout}/\texttt{stderr}), and image name.
-Loki retains logs for seven days.
-\\\\
-\noindent The application is instrumented to log the following events:
+\textbf{Grafana Alloy}. Each line in the logs is labelled with the 
+container name, service name, stream, and image name.
+\textbf{Loki} rejects old samples above the "age" of 168hours (7 days) to prevent unbounded log storage growth.
+\\\\    
+\noindent The application logs the following events:
 \begin{itemize}
-    \item Every HTTP request — method, path, response status code, and elapsed time mesured in ms.
-    \item Unhandled exceptions — method, path, and full error detail.
-    \item Custom application events injected via \texttt{ILogger} throughout the codebase.
+    \item HTTP requests — method, path, response status code, and elapsed time mesured in ms.
+    \item Unhandled exceptions — method, path, error details.
+    \item Custom logs through \texttt{ILogger} throughout the minitwit codebase.
 \end{itemize}
 
 \subsection{Security Hardening}
-\noindent The following measures were applied to harden the system:
+\noindent measures applied to harden the system:
 \begin{itemize}
-    \item \textbf{GitHub Secrets} — sensitive values such as database connection strings and API keys are stored as encrypted repository secrets and injected at deploy time, never hard-coded in source.
-    \item \textbf{HTTPS} — all traffic between clients and servers is encrypted via TLS, protecting data in transit from packet sniffing.
+    \item \textbf{GitHub Secrets} — database connection strings and API keys are stored as encrypted secrets and injected at deploy time.
     \item \textbf{Firewall} — inbound and outbound traffic on both application droplets and the database is restricted to only the ports and sources required.
 \end{itemize}
 
-\noindent Static code analysis is integrated directly into the CI pipeline using \textbf{SonarCloud}.
-Every build is scanned for bugs,coverage, code duplication and security vulnerabilities before it can be merged.
+\noindent Static code analysis is integrated in the CI pipeline using \textbf{SonarCloud}.
+Every build is analysed for bugs, coverage, code duplication and security vulnerabilities.
 As shown in \cref{fig:sonarcloud}, there are still a number of security vulnerabilities which we unfortunately did not have time to fix.
 \begin{figure}[H]
     \centering
@@ -147,10 +150,10 @@ As shown in \cref{fig:sonarcloud}, there are still a number of security vulnerab
 our load balencer distributes traffic across replicas, and automatically reroutes requests away from any node that becomes unavailable/crash.
 Crashed containers are restarted automatically via the on-failure restart policy.
 \\\\
-\noindent A \textbf{Redis} instance shared between replicas acts as a common cache, which ensures consistency within the returned data regardless of which replica handles the request.
+\noindent the application uses a \textbf{Redis} instance shared between all nodes which caches data between replica nodes, which ensures consistent returned data regardless of which replica handles the request.
 \\
-\noindent Deployments are made using rolling updates, starting a new docker container before stopping the previous one to avoid downtime.
-this process is repeated for each node with a 10 second delay to ensure that at least one instance is always available to serve requests during deployments to reduced downtime of the system.
+\noindent Deployments are made using rolling updates, which starts a new docker container before closing the previous one to avoid downtime.
+this process is repeated for each node with a 10 second delay to ensure that at least one instance is always available for requests during deployments to reduced downtime of the system.
 
 % How do you handle availability (replication, health checks, restarts)?
 % How do you scale (horizontal scaling, load balancing)?
