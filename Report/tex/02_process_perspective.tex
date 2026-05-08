@@ -79,7 +79,7 @@ metrics from Node Exporter running on each Swarm node.
 \\
 
 \noindent We have itterativly upated which data is collected and visualised in the Grafana dashboard based on the needs of the project.
-At the projects end we have the Grafana dashboard organised into five sections:
+At the projects end we have the Grafana dashboard organised into five sections, as shown in \cref{fig:monitoring}:
 \begin{itemize}
     \item \textbf{Health overview} — application up/down status, average response time,
           requests / sec, in-flight requests, error rate and current memory usage.
@@ -89,6 +89,13 @@ At the projects end we have the Grafana dashboard organised into five sections:
     \item \textbf{Process \& runtime} — process CPU usage, process memory usage, thread count, garbage colllection rate.
     \item \textbf{Uptime \& Availability} — uptime \& availability over time (bar graf), Availability mesured in percentage over the selected time period.
 \end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Monitoring.png}
+    \caption{Grafana monitoring dashboard.}
+    \label{fig:monitoring}
+\end{figure}
 
 \subsection{Logging}
 

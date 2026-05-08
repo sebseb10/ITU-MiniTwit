@@ -281,6 +281,10 @@ INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/lm/ts1lmr.fd
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/lm/ts1lmr.fd
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/lm/ts1lmr.fd
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ts1-lmr10.tfm
+INPUT ./images/Monitoring.png
+INPUT ./images/Monitoring.png
+INPUT ./images/Monitoring.png
+INPUT ./images/Monitoring.png
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc
 INPUT ./tex/03_reflection_perspective.tex
 INPUT ./tex/03_reflection_perspective.tex
