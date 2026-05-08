@@ -36,7 +36,7 @@ we added a check to see if the CI pipeline succeeded before the CD pipeline is t
 \\\\
 The CI pipeline was extended to include end-to-end testing using \textbf{Playwright}, and static code analysis using \textbf{SonarCloud}, \textbf{Hadolint} and \textbf{ShellCheck}. As shown in \cref{fig:ci}, on every push the pipeline detects which paths changed, builds the project, and then runs static analysis, unit tests, SonarCloud analysis, and end-to-end tests in parallel.
 \\\\
-While writing the report we itterativly extended the CI pipeline to check which files were changed to decicde which steps to run, if only the report directory was changed we only run "build PDF report" step and vice versa.
+While writing the report we itterativly extended the CI pipeline to check which files were changed to decicde which steps to run, if only the report directory was changed we only run "build PDF" report" step and vice versa.
 \begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{CI.png}
@@ -74,7 +74,7 @@ deploy the application using \textbf{Docker Swarm}, which deploys the applicatio
 
 \noindent Metrics are collected through \textbf{Prometheus} and visualised in \textbf{Grafana},
 both running as Docker services on a dedicated monitoring droplet, isolated from the application.
-Prometheus scrapes application-level metrics via \texttt{'itu-minitwit-app'} defined in the Prometheus configuration and
+Prometheus scrapes application metrics via \texttt{'itu-minitwit-app'} defined in the Prometheus configuration and
 metrics from Node Exporter running on each Swarm node.
 \\
 
@@ -114,15 +114,22 @@ Loki retains logs for seven days.
 \end{itemize}
 
 \subsection{Security Hardening}
-use of gihub secrets to store sensitive information such as database connection strings, API keys, and other secrets. 
+\noindent The following measures were applied to harden the system:
+\begin{itemize}
+    \item \textbf{GitHub Secrets} — sensitive values such as database connection strings and API keys are stored as encrypted repository secrets and injected at deploy time, never hard-coded in source.
+    \item \textbf{HTTPS} — all traffic between clients and servers is encrypted via TLS, protecting data in transit from packet sniffing.
+    \item \textbf{Firewall} — inbound and outbound traffic on both application droplets and the database is restricted to only the ports and sources required.
+\end{itemize}
 
-Use of HTTPS to encrypt data in transit between clients and the servers, ensuring that sensitive information is protected from package sniffing.
-
-Firewall to restrict outbound and inbound traffic on both application droplets and Database.
-\textbf{Maybe show pics of firewall rules and network policies here}
-
-
-
+\noindent Static code analysis is integrated directly into the CI pipeline using \textbf{SonarCloud}.
+Every build is scanned for bugs,coverage, code duplication and security vulnerabilities before it can be merged.
+As shown in \cref{fig:sonarcloud}, there are still a number of security vulnerabilities which we unfortunately did not have time to fix.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{SonarCube.png}
+    \caption{SonarCloud quality gate results.}
+    \label{fig:sonarcloud}
+\end{figure}
 
 
 % Brief description of measures taken, e.g.:
@@ -133,6 +140,17 @@ Firewall to restrict outbound and inbound traffic on both application droplets a
 % - Least-privilege service accounts
 
 \subsection{Availability and Scaling}
+
+\textbf{TODO : Insert pictures of stucture umls}
+\\\\
+\noindent The application is deployed as a \textbf{Docker Swarm} stack with \textbf{2 replicas} hosted as 2 seperate \textbf{DigtalOcean droplets}.
+our load balencer distributes traffic across replicas, and automatically reroutes requests away from any node that becomes unavailable/crash.
+Crashed containers are restarted automatically via the on-failure restart policy.
+\\\\
+\noindent A shared \textbf{Redis} instance acts as a common cache and session store, which ensures consistent responses regardless of which replica handles a request.
+\\
+\noindent Deployments use rolling updates, starting a new container before stopping the old one to avoid downtime.
+repeating this process for each node ensures that at least one instance is always available to serve requests during deployments.
 
 % How do you handle availability (replication, health checks, restarts)?
 % How do you scale (horizontal scaling, load balancing)?
