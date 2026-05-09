@@ -8,7 +8,6 @@ using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                        ?? throw new InvalidOperationException("DefaultConnection missing");
 

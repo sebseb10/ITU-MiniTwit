@@ -49,6 +49,8 @@ services:
     image: grafana/loki:3.5.0
     ports:
       - "3100:3100"
+    volumes:
+      - loki-storage:/loki
     configs:
       - source: loki_config
         target: /etc/loki/local-config.yaml
@@ -77,10 +79,7 @@ services:
     networks:
       - monitoring-network
     deploy:
-      replicas: 1
-      placement:
-        constraints:
-          - node.labels.role == monitoring
+      mode: global
       restart_policy:
         condition: on-failure
 
@@ -102,6 +101,8 @@ configs:
 
 volumes:
   grafana-storage:
+    driver: local
+  loki-storage:
     driver: local
 
 networks:
