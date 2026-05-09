@@ -1,9 +1,10 @@
 using Chirp.Infrastructure;
 using Chirp.Core;
 using Chirp.Infrastructure.Interfaces;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using StackExchange;
+using StackExchange.Redis;
 using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,6 +63,12 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
 });
+
+builder.Services.AddDataProtection()
+    .PersistKeysToStackExchangeRedis(
+        ConnectionMultiplexer.Connect(
+            builder.Configuration.GetConnectionString("Redis")!),
+        "DataProtection-Keys");
 
 builder.Services.AddHsts(options =>
 {
