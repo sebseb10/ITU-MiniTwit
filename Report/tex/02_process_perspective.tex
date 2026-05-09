@@ -1,5 +1,5 @@
 \section{Process' Perspective}
-\byline{TODO: names}
+\byline{Andreas Schiøtt}
 
 \subsection{CI/CD Pipeline}
 
@@ -55,8 +55,9 @@ While writing the report we itterativly extended the CI pipeline to check which 
 
 \noindent To ensure high availability of the application, we extended the CD pipeline to
 deploy the application using \textbf{Docker Swarm}, which deploys the application as a swarm with multiple replica nodes while a load balencer distributes traffic across the replicas.
- The application also uses shared \textbf{Redis} which caches data across the replicas.
- The detailed steps of the \textit{Deploy} job are shown in \cref{fig:cd-deploy}:
+this deployment uses rolling updates, which starts a new docker container before closing the previous one to avoid downtime.
+The application also uses shared \textbf{Redis} which caches data across the replicas.
+The detailed steps of the \textit{Deploy} job are shown in \cref{fig:cd-deploy}:
 
 
 \begin{figure}[H]
