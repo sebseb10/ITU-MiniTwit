@@ -5,6 +5,7 @@ server:
 
 common:
   path_prefix: /loki
+  instance_addr: 127.0.0.1
   storage:
     filesystem:
       chunks_directory: /loki/chunks
