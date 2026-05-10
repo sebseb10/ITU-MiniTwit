@@ -126,4 +126,6 @@ jobs:
           key: ${{ secrets.SSH_KEY_APP2 }}
           script: |
             cd /opt/itu-minitwit
+            docker stack rm monitoring || true
+            sleep 15
             docker stack deploy -c docker-stack.monitoring.yml monitoring
