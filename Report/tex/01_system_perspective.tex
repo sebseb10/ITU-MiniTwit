@@ -180,12 +180,12 @@ where they apply, from writing code through building, testing, deploying, and ob
 \label{sec:current_state}
 \paragraph{Static analysis.} Code quality is tracked continuously through SonarCloud, which
 analyses every push to main. The current results are shown in \cref{fig:sonarcloud}. Maintainability
-is rated \textbf{A} (54 minor issues) and dupblication is low at \textbf{4.7\%}, but
+is rated \textbf{A} (54 minor issues) and duplication is low at \textbf{4.7\%}, but
 reliability and security both sit at \textbf{C} (20 reliability issues, 5 security issues, 
 and 22 security hotspots awaiting review). The \textbf{test coverage is only 13.1\%}, the 
 codebase's clearest quality weakness. Dockerfiles, shell scripts and C\# formatting are 
 additionally linted in CI with hadolint, ShellCheck and \texttt{dotnet format}, configured 
-to report findings withoput blocking the pipeline.
+to report findings without blocking the pipeline.
 
 \begin{figure}[H]
     \centering
@@ -195,6 +195,31 @@ to report findings withoput blocking the pipeline.
 \end{figure} 
 
 \paragraph{What works.} In production the system is stable: the application reports healthy, 
-serves the simulator's laod of around \textbf{2.2k req/s} with no in-flight backlog , uses 
-about \textbf{156\,MB} of memory, and returns its API endpoints in roughtly \textbf{7\,ms at the 
-median and 37\,ms at the 99th percentile} with no server (5xx) errors. 
+serves the simulator's load of around \textbf{2.2k req/s} with no in-flight backlog, uses 
+about \textbf{156\,MB} of memory, and returns its API endpoints in roughly \textbf{7\,ms at the 
+median and 37\,ms at the 99th percentile} with no server (5xx) errors. High availability 
+has been demonstrated end-to-end: keepalived failover between the two load balancers, two 
+app replicas, automatic restart of crashed containers, and rolling updates without downtime
+and without logging users out. The full CI/CD pipeline (build, unit and integration tests, 
+end-to-end tests, static analysis, and deployment) is in place, and the metrics and logging 
+stacks are deployed. Over the term the project also migrated from SQLite to a managed 
+PostgreSQL database and from per-node Docker Compose to Docker Swarm.
+
+\paragraph{Open items.} A number of limitations remain, documented here:
+\begin{itemize}
+    \item The public-timeline page averages about \textbf{580\,ms}, far slower than the
+        API endpoints. It's the main performance weakness, rooted in the database access
+        pattern and round-trips to the managed database.
+    \item The logging dashboard is dominated by Loki's own internal push errors, so
+        application logs are not effectively surfaced, and there is no alerting.
+    \item SonarCloud's security findings are unaddressed. The Docker images are not
+        security-hardened and CI has no dedicated security scanner (e.g. CodeQL or
+        Trivy).
+    \item There is no declarative infrastructure-as-code or configuration management
+        (Vagrant, Ansible). Provisioning is handled by shell scripts, and the
+        \texttt{Vagrantfile} is a non-functional stub.
+    \item With only two of five group members actively contributing, some weekly tasks
+        (mapping the Three Ways, security scanning, infrastructure-as-code) were not
+        reached.
+\end{itemize}
+\noindent These would be the priorities for further work.
