@@ -1,4 +1,4 @@
-\section{System's Perspective}
+\sloppy \section{System's Perspective}
 \byline{Sebastian Holt Svendsen}
 
 \noindent In this section, we provide an overview of the ITU-MiniTwit system from a technical perspective. 
@@ -84,7 +84,7 @@ app holds no per-request state, and Redis and PostgreSQL hold all shared state.
 \noindent The \texttt{alt} fragment shows the alternative flow: when no valid session exists, the replica responds
 with \texttt{HTTP 302 /login}. The browser follows this redirect transparently and re-enters the same flow against
 \texttt{/login}, so the user simply lands on the login page.
-
+\newpage
 \subsection{Dependencies}
 \label{sec:dependencies}
 
@@ -96,17 +96,75 @@ with \texttt{HTTP 302 /login}. The browser follows this redirect transparently a
 % - CI/CD platform (GitHub Actions, etc.)
 % - Monitoring / logging stack (Prometheus, Grafana, Loki, etc.)
 % - Infrastructure / IaC tooling (Vagrant, Terraform, Ansible, etc.)
+\noindent \Cref{tab:dependencies-app,tab:dependencies-infra} list the main technologies used in ITU-MiniTwit, grouped by the layer
+where they apply, from writing code through building, testing, deploying, and observing the system.
 
 % Example table:
 \begin{table}[H]
     \centering
-    \caption{Technology dependencies}
-    \begin{tabularx}{\linewidth}{lX}
+    \caption{Application dependencies, by layer.}
+    \label{tab:dependencies-app}
+    \small
+    \begin{tabularx}{\linewidth}{l l X}
         \toprule
-        \textbf{Technology} & \textbf{Purpose} \\
+        \textbf{Layer} & \textbf{Technology} & \textbf{Purpose} \\
         \midrule
-        % TODO: fill rows
-        Docker              & Containerisation of all services \\
+        Language / runtime & C\# / .NET 8 (ASP.NET Core) & Application language and web runtime \\
+        \midrule
+        Web framework & ASP.NET Core Razor Pages & Server-rendered HTML UI \\
+            & ASP.NET Core Identity & Local accounts and authentication \\
+            & OAuth provider packages & Referenced but not enabled in the current build \\
+            & Swashbuckle / Swagger & Auto-generated docs for the simulator REST API \\
+            & prometheus-net.AspNetCore & Exposes the \texttt{/metrics} endpoint scraped by Prometheus \\
+            & Newtonsoft.Json & JSON serialisation for the simulator API \\
+        \midrule
+        Data & Entity Framework Core 8 (Npgsql) & ORM; maps C\# entities to tables and manages schema migrations \\
+            & PostgreSQL (DigitalOcean managed) & Persistent store for cheeps, authors and follow relations \\
+            & Redis (StackExchange.Redis) & Distributed session store and shared ASP.NET DataProtection key ring \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{Infrastructure, build and operations dependencies, by layer.}
+    \label{tab:dependencies-infra}
+    \small
+    \begin{tabularx}{\linewidth}{l l X}
+        \toprule
+        \textbf{Layer} & \textbf{Technology} & \textbf{Purpose} \\
+        \midrule
+        Containerisation & Docker & Containerisation of all components \\
+            & Docker Swarm & Clusters multiple Docker hosts into one \\
+            & Docker Hub & Registry for storing and distributing container images \\
+        \midrule
+        Networking & nginx & Terminates TLS and load balances to app replicas \\
+            & certbot & Automatically obtains and renews TLS certificates for the domain \\
+            & keepalived & Implements VRRP for high availability of the load balancers \\
+            & DuckDNS & Dynamic DNS service for the public hostname \\
+        \midrule
+        Cloud infrastructure & DigitalOcean & Droplets for all cluster nodes, the managed PostgreSQL database, and the Floating IP\\
+        \midrule
+        Provisioning / deployment & Shell scripts & Bootstrapping, configuration, and deployment scripts for the cluster \\
+            & rsync over SSH & Copies the stack YAML files and monitoring configs to the swarm manager before deployment \\
+        \midrule
+        CI/CD & GitHub Actions & Builds, tests and deploys the app on every push to main \\
+        \midrule
+        Testing & xUnit & Unit and integration test framework for .NET \\
+            & Playwright & End-to-end testing of the web UI \\
+        \midrule
+        Static analysis & SonarCloud & Code qualiy, coverage, and security analysis in CI \\
+            & hadolint + ShellCheck & Linting of Dockerfiles and shell scripts \\
+        \midrule
+        Monitoring / logging & Prometheus & Metrics collection and storage \\
+            & Grafana & Metrics and log visualisation \\
+            & Loki & Log aggregation and indexing \\
+            & Grafana Alloy & Collects container logs and ships them to Loki \\
+            & node-exporter & Exposes host-level metrics for Prometheus \\
+        \midrule
+        Dev tooling & Git / GitHub & Version control, code hosting, and pull-requests \\
+            & Rider & C\# IDE for development \\
+            & Visual Studio Code & Latex editor used for the report \\
         \bottomrule
     \end{tabularx}
 \end{table}
