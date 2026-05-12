@@ -7,6 +7,7 @@
 \geometry{margin=1in}
 
 \input{misc/packages}
+\usepackage{catchfile}
 
 \hypersetup{
     colorlinks=true,
@@ -29,10 +30,19 @@
 }
 \begin{document}
 
+\immediate\write18{texcount -sum -1 -merge -q main.tex > wordcount.aux 2>/dev/null}
+\CatchFileDef{\wordcount}{wordcount.aux}{}
+
 \maketitle
+\begin{center}
+    \small Word count: \wordcount
+\end{center}
 \tableofcontents
 
+
 \hyperref{https://github.com/sebseb10/ITU-MiniTwit}{category}{name}{ITU-MiniTwit GitHub Repository}
+
+
 \newpage
 
 \include{tex/01_system_perspective}

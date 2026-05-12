@@ -1,8 +1,8 @@
-PWD /Users/sebula/Documents/Universidad/4. Semester/DevOps/ITU-MiniTwit/Report
+PWD /Users/andreasschioettmac/Documents/ITU/4.Semester/ITU-MiniTwit/Report
 INPUT /usr/local/texlive/2026/texmf.cnf
 INPUT /usr/local/texlive/2026/texmf-dist/web2c/texmf.cnf
 INPUT /usr/local/texlive/2026/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT /Users/sebula/Documents/Universidad/4. Semester/DevOps/ITU-MiniTwit/Report/main.tex
+INPUT /Users/andreasschioettmac/Documents/ITU/4.Semester/ITU-MiniTwit/Report/main.tex
 OUTPUT main.log
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/base/article.cls
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/base/article.cls
@@ -161,6 +161,10 @@ INPUT /usr/local/texlive/2026/texmf-dist/tex/generic/uniquecounter/uniquecounter
 INPUT /usr/local/texlive/2026/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/cleveref/cleveref.sty
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/cleveref/cleveref.sty
+INPUT /usr/local/texlive/2026/texmf-dist/tex/generic/catchfile/catchfile.sty
+INPUT /usr/local/texlive/2026/texmf-dist/tex/generic/catchfile/catchfile.sty
+INPUT /usr/local/texlive/2026/texmf-dist/tex/generic/etexcmds/etexcmds.sty
+INPUT /usr/local/texlive/2026/texmf-dist/tex/generic/etexcmds/etexcmds.sty
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/lm/t1lmr.fd
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/lm/t1lmr.fd
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/lm/t1lmr.fd
@@ -202,6 +206,9 @@ OUTPUT main.pdf
 INPUT ./main.out
 INPUT ./main.out
 OUTPUT main.out
+INPUT ./wordcount.aux
+INPUT ./wordcount.aux
+INPUT wordcount.aux
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmr17.tfm
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmbx12.tfm
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmr12.tfm
@@ -243,6 +250,7 @@ INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/lm/t1lmtt.fd
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/lm/t1lmtt.fd
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/lm/t1lmtt.fd
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmtt12.tfm
+INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmr10.tfm
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmr12.tfm
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmbx12.tfm
 INPUT ./main.toc
@@ -320,6 +328,10 @@ INPUT ./images/Monitoring.png
 INPUT ./images/Monitoring.png
 INPUT ./images/Monitoring.png
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc
+INPUT ./images/Logging.png
+INPUT ./images/Logging.png
+INPUT ./images/Logging.png
+INPUT ./images/Logging.png
 INPUT ./images/SonarCube.png
 INPUT ./images/SonarCube.png
 INPUT ./images/SonarCube.png

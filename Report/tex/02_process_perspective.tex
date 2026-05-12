@@ -109,6 +109,7 @@ At the projects end we have the Grafana dashboard organised into five sections, 
 \noindent Application logs are aggregated using \textbf{Loki} and collected by
 \textbf{Grafana Alloy}. Each line in the logs is labelled with the 
 container name, service name, stream, and image name.
+Grafana Alloy collects logs from all the replica nodes and forwards them to Loki for aggregation and storage.
 \textbf{Loki} rejects old samples above the "age" of 168hours (7 days) to prevent unbounded log storage growth.
 \\\\    
 \noindent The application logs the following events:
@@ -117,6 +118,21 @@ container name, service name, stream, and image name.
     \item Unhandled exceptions — method, path, error details.
     \item Custom logs through \texttt{ILogger} throughout the minitwit codebase.
 \end{itemize}
+
+\noindent The logs are visualised in a Grafana dashboard with the following panels:
+\begin{itemize}
+    \item \textbf{Total Log lines \& error lines} — Total log lines \& errors within the selected time period
+    \item \textbf{Log lines \& Errors per container} — Log lines \& errors grouped by container within the selected time period
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[height=0.4\textheight]{Logging.png}
+    \caption{Loki log aggregation in Grafana.}
+    \label{fig:logging}
+\end{figure}
+
+
 
 \subsection{Security Hardening}
 \noindent measures applied to harden the system:
