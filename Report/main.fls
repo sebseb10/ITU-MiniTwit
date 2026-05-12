@@ -1,8 +1,8 @@
-PWD /Users/andreasschioettmac/Documents/ITU/4.Semester/ITU-MiniTwit/Report
+PWD /Users/sebula/Documents/Universidad/4. Semester/DevOps/ITU-MiniTwit/Report
 INPUT /usr/local/texlive/2026/texmf.cnf
 INPUT /usr/local/texlive/2026/texmf-dist/web2c/texmf.cnf
 INPUT /usr/local/texlive/2026/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT /Users/andreasschioettmac/Documents/ITU/4.Semester/ITU-MiniTwit/Report/main.tex
+INPUT /Users/sebula/Documents/Universidad/4. Semester/DevOps/ITU-MiniTwit/Report/main.tex
 OUTPUT main.log
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/base/article.cls
 INPUT /usr/local/texlive/2026/texmf-dist/tex/latex/base/article.cls
@@ -258,6 +258,15 @@ INPUT tex/01_system_perspective.tex
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmri10.tfm
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmri10.tfm
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmbx12.tfm
+INPUT ./images/Deployment.jpg
+INPUT ./images/Deployment.jpg
+INPUT ./images/Deployment.jpg
+INPUT ./images/Deployment.jpg
+INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmtt10.tfm
+INPUT ./images/Sequence.png
+INPUT ./images/Sequence.png
+INPUT ./images/Sequence.png
+INPUT ./images/Sequence.png
 INPUT ./tex/02_process_perspective.tex
 INPUT ./tex/02_process_perspective.tex
 OUTPUT tex/02_process_perspective.aux
@@ -268,7 +277,6 @@ INPUT ./images/CI.png
 INPUT ./images/CI.png
 INPUT ./images/CI.png
 INPUT ./images/CI.png
-INPUT /usr/local/texlive/2026/texmf-dist/fonts/tfm/public/lm/ec-lmtt10.tfm
 INPUT ./images/CD.png
 INPUT ./images/CD.png
 INPUT ./images/CD.png

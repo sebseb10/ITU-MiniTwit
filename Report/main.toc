@@ -1,18 +1,23 @@
 \contentsline {section}{\numberline {1}System's Perspective}{2}{section.1}%
 \contentsline {subsection}{\numberline {1.1}Architecture and Design}{2}{subsection.1.1}%
-\contentsline {subsection}{\numberline {1.2}Dependencies}{2}{subsection.1.2}%
-\contentsline {subsection}{\numberline {1.3}Current State of the Systems}{2}{subsection.1.3}%
-\contentsline {section}{\numberline {2}Process' Perspective}{3}{section.2}%
-\contentsline {subsection}{\numberline {2.1}CI/CD Pipeline}{3}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Monitoring}{5}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Logging}{6}{subsection.2.3}%
-\contentsline {subsection}{\numberline {2.4}Security Hardening}{6}{subsection.2.4}%
-\contentsline {subsection}{\numberline {2.5}Availability and Scaling}{7}{subsection.2.5}%
-\contentsline {section}{\numberline {3}Reflection Perspective}{8}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Evolution and Refactoring}{8}{subsection.3.1}%
-\contentsline {subsection}{\numberline {3.2}Operation}{8}{subsection.3.2}%
-\contentsline {subsection}{\numberline {3.3}Maintenance}{8}{subsection.3.3}%
-\contentsline {subsection}{\numberline {3.4}DevOps Style of Work}{8}{subsection.3.4}%
-\contentsline {section}{\numberline {4}Use of Generative AI}{9}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Tools Used}{9}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}Impact on Work Process}{9}{subsection.4.2}%
+\contentsline {paragraph}{Tier 1: Public entry.}{2}{section*.3}%
+\contentsline {paragraph}{Tier 2: Load balancers}{2}{section*.4}%
+\contentsline {paragraph}{Tier 3: App and data}{3}{section*.5}%
+\contentsline {paragraph}{Tier 4: Monitoring}{3}{section*.6}%
+\contentsline {paragraph}{Application architecture.}{3}{section*.7}%
+\contentsline {subsection}{\numberline {1.2}Dependencies}{4}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Current State of the Systems}{4}{subsection.1.3}%
+\contentsline {section}{\numberline {2}Process' Perspective}{5}{section.2}%
+\contentsline {subsection}{\numberline {2.1}CI/CD Pipeline}{5}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Monitoring}{7}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Logging}{8}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Security Hardening}{8}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Availability and Scaling}{9}{subsection.2.5}%
+\contentsline {section}{\numberline {3}Reflection Perspective}{10}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Evolution and Refactoring}{10}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Operation}{10}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Maintenance}{10}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}DevOps Style of Work}{10}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Use of Generative AI}{11}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Tools Used}{11}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Impact on Work Process}{11}{subsection.4.2}%
