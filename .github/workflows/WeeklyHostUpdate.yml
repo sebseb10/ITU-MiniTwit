@@ -1,0 +1,31 @@
+name: Weekly Host Security Updates
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'  # Every Monday at 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  update-swarm-manager:
+    name: Update swarm manager
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update OS and Docker Engine
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SSH_HOST_APP2 }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY_APP2 }}
+          script: |
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -q
+            apt-get upgrade -y -q
+            apt-get autoremove -y -q
+            docker image prune -af
+            if [ -f /var/run/reboot-required ]; then
+              echo "Kernel update requires reboot — scheduling in 1 minute"
+              shutdown -r +1
+            else
+              echo "No reboot required"
+            fi
