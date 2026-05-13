@@ -11,6 +11,7 @@ namespace Chirp.Core
 
         [Required]
         [StringLength(160)]
+        
         public required string Text { get; set; }
 
         [Required]
