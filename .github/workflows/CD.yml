@@ -129,3 +129,4 @@ jobs:
             docker stack rm monitorbare
             sleep 15
             docker stack deploy -c docker-stack.monitoring.yml monitoring
+

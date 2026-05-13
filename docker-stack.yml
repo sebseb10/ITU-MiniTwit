@@ -10,6 +10,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ConnectionStrings__Redis=${ConnectionStrings__Redis}
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     networks:
       - itu-minitwit-network
     deploy:
@@ -46,7 +50,7 @@ services:
         condition: on-failure
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
     networks:
       - itu-minitwit-network
     deploy:
