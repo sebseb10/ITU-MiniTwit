@@ -122,7 +122,9 @@ Grafana Alloy collects logs from all the replica nodes and forwards them to Loki
 \noindent The logs are visualised in a Grafana dashboard with the following panels:
 \begin{itemize}
     \item \textbf{Total Log lines \& error lines} — Total log lines \& errors within the selected time period
-    \item \textbf{Log lines \& Errors per container} — Log lines \& errors grouped by container within the selected time period
+    \item \textbf{Log lines \& Errors/exceptions \& warnings per container} — Log lines \& errors grouped by container within the selected time period
+    \item \textbf{log volume over time} — Log lines grouped by time (bar graph) within the selected time period
+    \item \textbf{log \& Error viewer} —  Visulisation of all log lines and errors. 
 \end{itemize}
 
 \begin{figure}[H]
@@ -142,7 +144,7 @@ we instead tried to implement parts of the guide \hyperref{https://cheatsheetser
 \begin{itemize}
     \item \textbf{Unprivilaged users in Docker containers} — Containers run as an unpriviledged user to prevent privilege escalation attacks.o
     \item \textbf{Prevent in-container privilege escalation} — use --security-opt=no-new-privileges on containers to prevent privilege escalation attacks.
-    \item \textbf{Automatic Docker container update} - implementet a WeeklyHostUpdate which automatically updates the docker images on the swarm nodes to ensure that security updates are applied. 
+    \item \textbf{Automatic Docker container update} - implementet a WeeklyHostUpdate which automatically updates the docker images on the swarm nodes to ensure that security updates are applied.
 \end{itemize}
 
 \noindent System uses applied to harden the system:
