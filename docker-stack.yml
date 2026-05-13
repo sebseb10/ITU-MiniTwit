@@ -8,8 +8,21 @@ services:
     environment:
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
-      - ConnectionStrings__Redis=${ConnectionStrings__Redis}
+    secrets:
+      - db_connection
+      - redis_connection
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     networks:
       - itu-minitwit-network
     deploy:
@@ -17,6 +30,10 @@ services:
       placement:
         constraints:
           - node.labels.role == app
+      resources:
+        limits:
+          memory: 512m
+          cpus: '1.0'
       restart_policy:
         condition: on-failure
         delay: 5s
@@ -38,15 +55,49 @@ services:
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 1024
     networks:
       - itu-minitwit-network
     deploy:
       mode: global
+      resources:
+        limits:
+          memory: 128m
+          cpus: '0.1'
       restart_policy:
         condition: on-failure
 
   redis:
     image: redis:7
+    volumes:
+      - redis-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     networks:
       - itu-minitwit-network
     deploy:
@@ -54,8 +105,22 @@ services:
       placement:
         constraints:
           - node.labels.role == redis
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
+
+volumes:
+  redis-data:
+    driver: local
+
+secrets:
+  db_connection:
+    external: true
+  redis_connection:
+    external: true
 
 networks:
   itu-minitwit-network:

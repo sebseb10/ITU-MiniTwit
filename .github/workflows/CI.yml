@@ -121,6 +121,15 @@ jobs:
             -not -path "*/obj/*" \
           | xargs shellcheck || true
 
+      - name: trivy — Dockerfile and compose misconfiguration scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: config
+          scan-ref: .
+          format: github
+          exit-code: '0'
+          hide-progress: false
+
   # ─── test ─────────────────────────────────────────────────────────────────
   test:
     name: Test

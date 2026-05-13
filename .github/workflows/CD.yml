@@ -42,9 +42,24 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/itu-minitwit:latest
             ${{ secrets.DOCKER_USERNAME }}/itu-minitwit:${{ github.sha }}
   
-  Deploy:
+  scan:
     runs-on: ubuntu-latest
     needs: build-push
+    steps:
+      - name: trivy — image vulnerability and secret scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/itu-minitwit:${{ github.sha }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+          scanners: vuln,secret
+
+  Deploy:
+    runs-on: ubuntu-latest
+    needs: scan
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,6 +78,32 @@ jobs:
           key: ${{ secrets.SSH_KEY_APP2 }}
           script: |
             mkdir -p /opt/itu-minitwit
+
+      - name: Configure Docker daemon log level
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SSH_HOST_APP2 }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY_APP2 }}
+          script: |
+            if [ ! -f /etc/docker/daemon.json ]; then
+              cp /opt/itu-minitwit/infra/daemon.json /etc/docker/daemon.json
+              kill -HUP $(pidof dockerd) 2>/dev/null || true
+            fi
+
+      - name: Create Docker secrets
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SSH_HOST_APP2 }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY_APP2 }}
+          script: |
+            if ! docker secret inspect db_connection >/dev/null 2>&1; then
+              printf '%s' '${{ secrets.DO_CONNECTION_STRING }}' | docker secret create db_connection -
+            fi
+            if ! docker secret inspect redis_connection >/dev/null 2>&1; then
+              printf '%s' '${{ secrets.DO_REDIS_CONNECTION_STRING }}' | docker secret create redis_connection -
+            fi
 
       - name: Sync files to swarm manager
         run: |
@@ -87,8 +128,6 @@ jobs:
             TAG=${{ github.sha }}
             ASPNETCORE_ENVIRONMENT=Production
             ASPNETCORE_URLS=http://+:5001
-            ConnectionStrings__DefaultConnection="${{ secrets.DO_CONNECTION_STRING }}"
-            ConnectionStrings__Redis="${{ secrets.DO_REDIS_CONNECTION_STRING }}"
             EOF
 
       - name: Deploy minitwit stack

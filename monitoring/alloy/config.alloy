@@ -1,37 +1,31 @@
-discovery.docker "containers" {
-  host = "unix:///var/run/docker.sock"
-  refresh_interval = "5s"
+local.file_match "containers" {
+  path_targets = [{"__path__" = "/var/lib/docker/containers/*/*.log"}]
 }
 
-discovery.relabel "containers" {
-  targets = discovery.docker.containers.targets
-
-  rule {
-    source_labels = ["__meta_docker_container_name"]
-    regex         = "/(.*)"
-    target_label  = "container"
-  }
-
-  rule {
-    source_labels = ["__meta_docker_container_name"]
-    regex         = "/(.*)"
-    target_label  = "service"
-  }
-
-  rule {
-    source_labels = ["__meta_docker_container_log_stream"]
-    target_label  = "stream"
-  }
-
-  rule {
-    source_labels = ["__meta_docker_container_image"]
-    target_label  = "image"
-  }
+loki.source.file "containers" {
+  targets    = local.file_match.containers.targets
+  forward_to = [loki.process.parse_docker.receiver]
 }
 
-loki.source.docker "containers" {
-  host       = "unix:///var/run/docker.sock"
-  targets    = discovery.relabel.containers.output
+loki.process "parse_docker" {
+  // Docker writes logs as JSON: {"log":"...\n","stream":"stdout","time":"..."}
+  stage.json {
+    expressions = {
+      output = "log",
+      stream = "stream",
+    }
+  }
+
+  stage.labels {
+    values = {
+      stream = null,
+    }
+  }
+
+  stage.output {
+    source = "output"
+  }
+
   forward_to = [loki.write.default.receiver]
 }
 

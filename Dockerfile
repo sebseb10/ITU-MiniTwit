@@ -12,14 +12,17 @@ RUN dotnet publish src/Chirp.Web/Chirp.Web.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
+RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
+
 COPY --from=build /app/publish .
-#Mabey remake this, creates a foler for Database since original db path was ../ 
-#which takes the program out of the docker container
-RUN mkdir -p data
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN mkdir -p data && \
+    chown -R appuser:appgroup /app && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
+
+USER appuser
+
 ENV ASPNETCORE_URLS=http://+:5001
 EXPOSE 5001
 
-
-
-
-ENTRYPOINT ["dotnet", "Chirp.Web.dll"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

@@ -5,11 +5,23 @@ services:
     image: prom/prometheus:v3.5.1
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
-    ports:
-      - "9090:9090"
     configs:
       - source: prometheus_config
         target: /etc/prometheus/prometheus.yml
+    volumes:
+      - prometheus-data:/prometheus
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     networks:
       - monitoring-network
     deploy:
@@ -17,6 +29,10 @@ services:
       placement:
         constraints:
           - node.labels.role == monitoring
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
 
@@ -35,6 +51,18 @@ services:
         target: /etc/grafana/provisioning/dashboards/dashboard.json
       - source: grafana_dashboard_logging
         target: /etc/grafana/provisioning/dashboards/logging.json
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     networks:
       - monitoring-network
     deploy:
@@ -42,19 +70,33 @@ services:
       placement:
         constraints:
           - node.labels.role == monitoring
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
 
   loki:
     image: grafana/loki:3.5.0
-    ports:
-      - "3100:3100"
     volumes:
       - loki-storage:/loki
     configs:
       - source: loki_config
         target: /etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     networks:
       - monitoring-network
     deploy:
@@ -62,13 +104,18 @@ services:
       placement:
         constraints:
           - node.labels.role == monitoring
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.5'
       restart_policy:
         condition: on-failure
 
   alloy:
     image: grafana/alloy:latest
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - alloy-data:/var/lib/alloy/data
     configs:
       - source: alloy_config
         target: /etc/alloy/config.alloy
@@ -76,10 +123,26 @@ services:
       - run
       - /etc/alloy/config.alloy
       - --storage.path=/var/lib/alloy/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     networks:
       - monitoring-network
     deploy:
       mode: global
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.25'
       restart_policy:
         condition: on-failure
 
@@ -103,6 +166,10 @@ volumes:
   grafana-storage:
     driver: local
   loki-storage:
+    driver: local
+  prometheus-data:
+    driver: local
+  alloy-data:
     driver: local
 
 networks:

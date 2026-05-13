@@ -5,13 +5,31 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '0.5'
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     restart: unless-stopped
     networks:
       - monitoring-network
-  
+
   grafana:
     image: grafana/grafana:12.1
     container_name: grafana
@@ -21,39 +39,94 @@ services:
       - grafana-storage:/var/lib/grafana
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.5'
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     restart: unless-stopped
     networks:
       - monitoring-network
-        
+
   loki:
     image: grafana/loki:3.5.0
     container_name: loki
     ports:
-      - "3100:3100"
+      - "127.0.0.1:3100:3100"
     volumes:
       - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
     command: -config.file=/etc/loki/local-config.yaml
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.5'
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     restart: unless-stopped
     networks:
       - monitoring-network
-  
+
   alloy:
     image: grafana/alloy:latest
     container_name: alloy
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - alloy-data:/var/lib/alloy/data
     command:
       - run
       - /etc/alloy/config.alloy
-      -  --storage.path=/var/lib/alloy/data
+      - --storage.path=/var/lib/alloy/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: '0.25'
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     restart: unless-stopped
     networks:
       - monitoring-network
-    
+
 volumes:
   grafana-storage: {}
-  
+  prometheus-data: {}
+  loki-data: {}
+  alloy-data: {}
+
 networks:
   monitoring-network:
-    
