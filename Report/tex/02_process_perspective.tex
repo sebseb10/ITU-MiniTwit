@@ -37,6 +37,8 @@ we added a check to see if the CI pipeline succeeded before the CD pipeline is t
 The CI pipeline was extended to include end-to-end testing using \textbf{Playwright}, and static code analysis using \textbf{SonarCloud} \& \textbf{Trivy}, \textbf{Hadolint} and \textbf{ShellCheck}. As shown in \cref{fig:ci}, on every push the pipeline detects which paths changed, builds the project, and then runs static analysis, unit tests, SonarCloud analysis, and end-to-end tests in parallel.
 \\\\
 While writing the report we itterativly extended the CI pipeline to check which files were changed to decicde which steps to run, if only the report directory was changed we only run "build PDF" report" step and vice versa.
+
+Our pipeline also creates a scheduled weekly release every week. 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{CI.png}
