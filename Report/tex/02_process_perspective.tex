@@ -142,6 +142,7 @@ we instead tried to implement parts of the guide \hyperref{https://cheatsheetser
 \begin{itemize}
     \item \textbf{Unprivilaged users in Docker containers} — Containers run as an unpriviledged user to prevent privilege escalation attacks.o
     \item \textbf{Prevent in-container privilege escalation} — use --security-opt=no-new-privileges on containers to prevent privilege escalation attacks.
+    \item \textbf{Automatic Docker container update} - implementet a WeeklyHostUpdate which automatically updates the docker images on the swarm nodes to ensure that security updates are applied. 
 \end{itemize}
 
 \noindent System uses applied to harden the system:
