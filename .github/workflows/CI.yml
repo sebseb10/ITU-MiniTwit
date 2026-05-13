@@ -29,7 +29,24 @@ jobs:
       - id: report_only
         shell: bash
         run: |
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          BEFORE="${{ github.event.before }}"
+          SHA="${{ github.sha }}"
+
+          # On a new branch push github.event.before is the null SHA.
+          # Fall back to diffing against the merge-base with main so we
+          # still get a meaningful file list instead of treating it as
+          # report-only.
+          if [[ "$BEFORE" == "0000000000000000000000000000000000000000" ]]; then
+            BASE=$(git merge-base HEAD origin/main 2>/dev/null || echo "")
+            if [[ -n "$BASE" ]]; then
+              CHANGED=$(git diff --name-only "$BASE" "$SHA")
+            else
+              CHANGED="non-report-change"
+            fi
+          else
+            CHANGED=$(git diff --name-only "$BEFORE" "$SHA")
+          fi
+
           echo "Changed files:"
           echo "$CHANGED"
           NON_REPORT=$(echo "$CHANGED" | grep -v '^Report/' || true)
