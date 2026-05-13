@@ -165,6 +165,7 @@ jobs:
           key: ${{ secrets.SSH_KEY_APP2 }}
           script: |
             cd /opt/itu-minitwit
-            docker stack rm monitorbare
-            sleep 15
+            docker stack rm monitorbare 2>/dev/null || true
+            docker stack rm monitoring 2>/dev/null || true
+            timeout 120 sh -c 'until [ -z "$(docker service ls --filter label=com.docker.stack.namespace=monitoring -q 2>/dev/null)" ]; do sleep 5; done'
             docker stack deploy -c docker-stack.monitoring.yml monitoring

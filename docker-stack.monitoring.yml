@@ -175,6 +175,3 @@ volumes:
 networks:
   monitoring-network:
     driver: overlay
-    ipam:
-      config:
-        - subnet: 10.20.0.0/24
