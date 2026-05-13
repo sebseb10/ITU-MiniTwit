@@ -255,13 +255,19 @@ jobs:
         run: dotnet build -c Release --no-restore
 
       - name: Cache Playwright browsers
+        id: playwright-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-chromium-${{ hashFiles('test/End2End/End2End.csproj') }}
 
-      - name: Install Playwright browsers
+      - name: Install Playwright browsers (cache miss)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pwsh test/End2End/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pwsh test/End2End/bin/Release/net8.0/playwright.ps1 install-deps chromium
 
       - name: Start web app in background
         run: >
