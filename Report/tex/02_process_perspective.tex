@@ -135,10 +135,17 @@ Grafana Alloy collects logs from all the replica nodes and forwards them to Loki
 
 
 \subsection{Security Hardening}
+
+We did not have the opportunity to implement hardened docker images as it is a paid feature in Docker Hub, we instead tried to implement parts of the guide \hyperref{https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html}{category}{name}{OWASP Docker Security Cheat Sheet}
+\\ 
+
+
 \noindent measures applied to harden the system:
 \begin{itemize}
     \item \textbf{GitHub Secrets} — database connection strings and API keys are stored as encrypted secrets and injected at deploy time.
     \item \textbf{Firewall} — inbound and outbound traffic on both application droplets and the database is restricted to only the ports and sources required.
+    \item \textbf{TLS/HTTPS} — traffic to the application is encrypted using TLS Through the Nginx load balancer using Certbot.
+    \item \textbf{Static code analysis} — SonarCloud is used to identify security vulnerabilities in the codebase/pipelines.
 \end{itemize}
 
 \noindent Static code analysis is integrated in the CI pipeline using \textbf{SonarCloud}.
@@ -163,9 +170,9 @@ with only two of five members actively contributing, there was not time to addre
 
 \subsection{Availability and Scaling}
 
-\textbf{TODO : Insert pictures of stucture umls}
+\textbf{Andreas Schiøtt, Sebastian Holt Svendsen}
 \\\\
-\noindent The application is deployed as a \textbf{Docker Swarm} stack with \textbf{2 replicas} hosted as 2 seperate \textbf{DigtalOcean droplets}.
+\noindent The application is deployed as a \textbf{Docker Swarm} stack with \textbf{2 replicas} hosted as 2 seperate \textbf{DigtalOcean droplets} as can be seen in Fig:\ref{fig:deployment}.
 our load balencer distributes traffic across replicas, and automatically reroutes requests away from any node that becomes unavailable/crash.
 Crashed containers are restarted automatically via the on-failure restart policy.
 \\\\
