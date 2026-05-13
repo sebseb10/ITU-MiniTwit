@@ -11,6 +11,10 @@ services:
     restart: unless-stopped
     networks:
       - monitoring-network
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
   
   grafana:
     image: grafana/grafana:12.1
@@ -24,6 +28,12 @@ services:
     restart: unless-stopped
     networks:
       - monitoring-network
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+    security_opt:
+      - no-new-privileges:true
         
   loki:
     image: grafana/loki:3.5.0
@@ -36,6 +46,10 @@ services:
     restart: unless-stopped
     networks:
       - monitoring-network
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
   
   alloy:
     image: grafana/alloy:latest
@@ -50,6 +64,10 @@ services:
     restart: unless-stopped
     networks:
       - monitoring-network
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     
 volumes:
   grafana-storage: {}
