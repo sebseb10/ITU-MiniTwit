@@ -34,11 +34,11 @@ After cloud hosting on \textbf{DigitalOcean} was setup we added the CD pipeline 
 which then builds a \textbf{Docker image}, pushes it to \textbf{Docker Hub} and then deploys it to the \textbf{DigitalOcean} droplet using \textbf{SSH \& docker pull}. With the later focus on idempotent deployment,
 we added a check to see if the CI pipeline succeeded before the CD pipeline is triggered.
 \\\\
-The CI pipeline was extended to include end-to-end testing using \textbf{Playwright}, and static code analysis using \textbf{SonarCloud} \& \textbf{Trivy}, \textbf{Hadolint} and \textbf{ShellCheck}. As shown in \cref{fig:ci}, on every push the pipeline detects which paths changed, builds the project, and then runs static analysis, unit tests, SonarCloud analysis, and end-to-end tests in parallel.
+The CI pipeline was extended to include end-to-end testing using \textbf{Playwright}, and static code analysis using \textbf{SonarCloud} \& \textbf{Trivy}, \textbf{Hadolint} and \textbf{ShellCheck}. As shown in \cref{fig:ci}, on every push the pipeline detects which paths changed, builds the project, and then runs static anal¡¡ tests, SonarCloud analysis, and end-to-end tests in parallel.
 \\\\
 While writing the report we itterativly extended the CI pipeline to check which files were changed to decicde which steps to run, if only the report directory was changed we only run "build PDF" report" step and vice versa.
 
-Our pipeline also creates a scheduled weekly release every week. 
+Our pipeline also creates a scheduled weekly github release every week as a self-contained release.
 \begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{CI.png}
@@ -90,7 +90,7 @@ At the projects end we have the Grafana dashboard organised into five sections, 
 \begin{itemize}
     \item \textbf{Health overview} — application up/down status, average response time,
           requests / sec, in-flight requests, error rate and current memory usage.
-    \item \textbf{HTTP traffic} — request rate by status code, … response-time percentiles grouped by p50 p90 and p99,
+    \item \textbf{HTTP traffic} — request rate by status code, response-time percentiles grouped by p50 p90 and p99.
      request rate /s grouped by HTTP method, and the response time grouped by api endpoints.
     \item \textbf{Error tracking}  error rates req/s grouped by 400/500 http response, errors mesured in req/s per endpoint.
     \item \textbf{Process \& runtime} — process CPU usage, process memory usage, thread count, garbage colllection rate.
@@ -181,7 +181,7 @@ with only two of five members actively contributing, there was not time to addre
 
 \textbf{Andreas Schiøtt, Sebastian Holt Svendsen}
 \\\\
-\noindent The application is deployed as a \textbf{Docker Swarm} stack with \textbf{2 replicas} hosted as 2 seperate \textbf{DigtalOcean droplets} as can be seen in Fig:\ref{fig:deployment}.
+\noindent The application is deployed as a \textbf{Docker Swarm} stack with \textbf{2 replicas} hosted as 2 separate \textbf{DigtalOcean droplets} as can be seen in Fig:\ref{fig:deployment}.
 our load balencer distributes traffic across replicas, and automatically reroutes requests away from any node that becomes unavailable/crash.
 The load balencer performs health checks on the replicas using heartbeats through keepalived, and if a replica becomes unavailable it is automatically removed from the load balencer until it becomes healthy again. 
 Crashed containers are restarted automatically via the on-failure restart policy.
