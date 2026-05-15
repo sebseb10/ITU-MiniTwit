@@ -57,11 +57,17 @@ jobs:
         with:
           root_file: Report/main.tex
           work_in_root_file_dir: true
+      - name: Package report
+        run: |
+          mkdir -p Report/build
+          cp Report/main.pdf Report/build/BSc_group_f.pdf
+          cd Report/build
+          zip BSc_group_f.zip BSc_group_f.pdf
       - name: Upload PDF
         uses: actions/upload-artifact@v4
         with:
           name: Report
-          path: Report/main.pdf
+          path: Report/build/BSc_group_f.zip
 
   # ─── build ────────────────────────────────────────────────────────────────
   build:
