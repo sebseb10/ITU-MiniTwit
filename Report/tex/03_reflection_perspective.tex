@@ -4,23 +4,45 @@
 \subsection{Evolution and Refactoring}
 
 
-Our initial implementation of CI/CD pipelines ran concurently which resulted in us pushing changes to the repository, which at times could crashed the production environment, w/o giving an alert of the downtime to the developers. 
-after experiencing this issue we itteratively extended the CD pipeline by adding a check to see if the CI pipeline succeeded before the CD pipeline is triggered.
-Further refactorings to the CI/CD pipeline included the use of caches to speed up deployment time which previously has been a bottleneck in the process when trying to make small changes and quickly test them.
+Our initial implementation of CI/CD pipelines ran concurently which resulted in us pushing changes to
+ the repository, which at times could crashed the production environment, w/o giving an alert of the 
+ downtime to the developers. 
+after experiencing this issue we itteratively extended the CD pipeline by adding a check to see if the
+ CI pipeline succeeded before the CD pipeline is triggered.
+Further refactorings to the CI/CD pipeline included the use of caches to speed up deployment time 
+which previously has been a bottleneck in the process when trying to make small changes and quickly
+ test them.
 \\\\
-In early itterations of the program we forgot to cull old containers when updates were pushed, this was found after the implementation of our monitoring where we were able to detect and debug the cause of suspiciously high CPU usage. 
+In early itterations of the program we forgot to cull old containers when updates were pushed, this was
+ found after the implementation of our monitoring where we were able to detect and debug the cause of 
+ suspiciously high CPU usage. 
 \\
-Initially we hosted the monitoring/logging stack on the same droplet as the production environment, which ment that if one went down the other would be affected as well which made it harder to debug the cause of the issues, this was fixed by moving the monitoring/logging stack to a separate droplet.
+Initially we hosted the monitoring/logging stack on the same droplet as the production environment,
+ which ment that if one went down the other would be affected as well which made it harder to debug
+  the cause of the issues, this was fixed by moving the monitoring/logging stack to a separate droplet.
 \\\\
-These issues taught us the importance of idempotent deployment, and the importance of monitoring as a tool to quickly introspect, detect and debug issues in production.
+These issues taught us the importance of idempotent deployment, and the importance of monitoring as a
+ tool to quickly introspect, detect and debug issues in production.
 \\\\
 
 
 % What were the biggest challenges when evolving the codebase?
 % How did you handle breaking changes, migrations, etc.?
 % Link to relevant commits, issues, or PRs as evidence.
-\noindent We had the unfortunate experience of having our monitoring droplet exploited and used to embed a cryptominer due to insufficient security measures, which was detected through our monitoring and logging stack, and then mitigated by shutting down the droplet and redeploying it with hardened security measures (see security-incident-ie-BITCOIN-MINE.md).
+\noindent We had the unfortunate experience of having our monitoring droplet exploited and used to 
+embed a cryptominer due to insufficient security measures, which was detected through our monitoring 
+and logging stack, and then mitigated by shutting down the droplet and redeploying it with hardened 
+security measures (see security-incident-ie-BITCOIN-MINE.md).\\\\
 
+
+\noindent The system underwent multiple major architectural refactors, it went from a locally hosted
+  single-container setup, to a Dockerised application using  SQLite, to a PostgreSQL
+  database hosted on a seperate dedicated droplet, and finally to a Docker Swarm stack
+   with multiple replicas and a load balancer
+\\
+Throughout the course we had to adapt to the changing requiremetns and continously scaling of the
+ "user base", when it at multiple points became clear that the older architecture was not sufficient to
+  handle the load, and had to be refactored to a more scalable architecture.
 
 % What was hard to operate?
 % Incidents, outages, on-call situations?
@@ -29,10 +51,12 @@ These issues taught us the importance of idempotent deployment, and the importan
 
 \subsection{Maintenance}
 
-we did unfortuatly not implemet any alerting system, which meant that we had no way of knowing if the production environment was down until we manually checked.
+We did unfortuatly not implemet any alerting system, which meant that we had no way of knowing if the 
+production environment was down until we manually checked.
 implementing this would be top priority if we were to continue maintaining the system.
 \\
-To handle updating dependecies we implemented a scheduled weekly github action ran early monday morning which updates the dependencies.
+To handle updating dependecies we implemented a scheduled weekly github action ran early monday morning 
+which updates the dependencies.\\
 
 
 % How did you keep dependencies up-to-date?
