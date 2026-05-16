@@ -1,11 +1,11 @@
 \sloppy \section{System's Perspective}
 \byline{Sebastian Holt Svendsen}
 
-\noindent In this section, we provide an overview of the ITU-MiniTwit system. 
+\noindent In this section, we provide an overview of the ITU-MiniTwit system from a technical perspective. 
 We cover three areas: the architecture and design (\cref{sec:architecture}), the dependencies and technologies used (\cref{sec:dependencies}), 
 and the current state of the system (\cref{sec:current_state}).
 The app is deployed on DigitalOcean as a Docker Swarm cluster, fronted by two nginx load balancers,
-with a shared Redis for session-state and a managed PostgreSQL database for persistent data.
+with a shared Redis for user-session-state and a managed PostgreSQL database for persistent data.
 
 \subsection{Architecture and Design}
 \label{sec:architecture}
@@ -108,6 +108,7 @@ where they apply, from writing code through building, testing, deploying, and ob
         \midrule
         Web framework & ASP.NET Core Razor Pages & Server-rendered HTML UI \\
             & ASP.NET Core Identity & Local accounts and authentication \\
+            & OAuth provider packages & Referenced but not enabled in the current build \\
             & Swashbuckle / Swagger & Auto-generated docs for the simulator REST API \\
             & prometheus-net.AspNetCore & Exposes the \texttt{/metrics} endpoint scraped by Prometheus \\
             & Newtonsoft.Json & JSON serialisation for the simulator API \\
@@ -147,7 +148,7 @@ where they apply, from writing code through building, testing, deploying, and ob
         Testing & xUnit & Unit and integration test framework for .NET \\
             & Playwright & End-to-end testing of the web UI \\
         \midrule
-        Static analysis & SonarCloud & Code quality, coverage, and security analysis in CI \\
+        Static analysis & SonarCloud & Code qualiy, coverage, and security analysis in CI \\
             & hadolint + ShellCheck & Linting of Dockerfiles and shell scripts \\
         \midrule
         Monitoring / logging & Prometheus & Metrics collection and storage \\
