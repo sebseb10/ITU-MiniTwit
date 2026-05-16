@@ -1,62 +1,65 @@
-\section{Reflection Perspective}
+\sloppy \section{Reflection Perspective}
 \byline{Andreas Schiøtt, Sebastian Holt Svendsen}
 
 \subsection{Evolution and Refactoring}
 
-
-Our initial implementation of CI/CD pipelines ran concurently which resulted in us pushing changes to
- the repository, which at times could crashed the production environment, w/o giving an alert of the 
- downtime to the developers. 
-after experiencing this issue we itteratively extended the CD pipeline by adding a check to see if the
- CI pipeline succeeded before the CD pipeline is triggered.
-Further refactorings to the CI/CD pipeline included the use of caches to speed up deployment time 
-which previously has been a bottleneck in the process when trying to make small changes and quickly
- test them.
-\\\\
-In early itterations of the program we forgot to cull old containers when updates were pushed, this was
- found after the implementation of our monitoring where we were able to detect and debug the cause of 
- suspiciously high CPU usage. 
-\\
-Initially we hosted the monitoring/logging stack on the same droplet as the production environment,
- which ment that if one went down the other would be affected as well which made it harder to debug
-  the cause of the issues, this was fixed by moving the monitoring/logging stack to a separate droplet.
-\\\\
-These issues taught us the importance of idempotent deployment, and the importance of monitoring as a
- tool to quickly introspect, detect and debug issues in production.
-\\\\
-
+Our initial implementation of CI/CD pipelines ran concurrently: a push would trigger  
+deployment before its CI run had finished, so failing build could reach production silently. 
+We fixed this by gating CD on a successful CI run, and later added caching to speed up the End-to-End 
+tests, which had been a bottleneck in the process. \\
+In early iterations we did not cull old containers on deployment. The resulting CPU pressure 
+was first visible through our monitoring stack, which then became a crucial diagnostic tool. 
+Monitoring and logging initially ran on the same droplet as the application, a single point of failure that could blind 
+us at the worst moment, so we moved them onto a dedicated droplet, a decision that proved fortunate 
+when that droplet was later compromised (see next paragraph), as it limited the blast radius and 
+kept the application running.
 
 % What were the biggest challenges when evolving the codebase?
 % How did you handle breaking changes, migrations, etc.?
 % Link to relevant commits, issues, or PRs as evidence.
-\noindent We had the unfortunate experience of having our monitoring droplet exploited and used to 
-embed a cryptominer due to insufficient security measures, which was detected through our monitoring 
-and logging stack, and then mitigated by shutting down the droplet and redeploying it with hardened 
-security measures (see security-incident-ie-BITCOIN-MINE.md).\\\\
 
+\paragraph{Hacking incident.} \label{sec:hacking-incident} On 2026-04-21 we discovered that our monitoring droplet had been compromised three 
+days earlier: a brute-force SSH scanning campaign, ongoing since 2026-04-19, had culminated in 
+the \texttt{preprod-deploy} key being used for root access from four Azure IPs. The attacker 
+deployed a cryptominer disguised as \texttt{/tmp/mysql}, created a fake \texttt{dnsmasq} user 
+for persistence, and started a rogue \texttt{chirp-postgres} container. Ironically the compromise 
+was discovered not through our monitoring stack but because of it, the droplet was unresponsive and 
+pinned at 100\% CPU, leading to a manual investigation. Because root had been obtained directly 
+via the leaked key, the host could not be salvaged. We destroyed and rebuilt it, restricting SSH 
+access via UFW to our own IPs. The full forensic timeline is preserved in \texttt{security-incident-ie-BITCOIN-MINE.md}.
 
-\noindent The system underwent multiple major architectural refactors, it went from a locally hosted
-  single-container setup, to a Dockerised application using  SQLite, to a PostgreSQL
-  database hosted on a seperate dedicated droplet, and finally to a Docker Swarm stack
-   with multiple replicas and a load balancer
+\paragraph{Architectual refactor.} The system underwent multiple major architectural refactors over the semester, 
+from a locally hosted single-container setup, to a Dockerised application using  SQLite, to a DigitalOcean mangaged PostgreSQL,
+and finally to a Docker Swarm stack with replicated app instances behind a load-balanced floatin IP.
+Each step was forced by a hard limit of the previous one: SQLite's concurrent write limit, single 
+host failure modes that took the whole system down, and the need for rolling updates without downtime.
 \\
-Throughout the course we had to adapt to the changing requiremetns and continously scaling of the
- "user base", when it at multiple points became clear that the older architecture was not sufficient to
-  handle the load, and had to be refactored to a more scalable architecture.
-
+Across these refactors the common thread was operational visibility, every significant improvement 
+to the system was the response to a bottleneck or failure discovered either manually or through 
+monitoring.
 % What was hard to operate?
 % Incidents, outages, on-call situations?
 % What tooling or practices helped most?
 % Link to relevant issues/tickets.
 
 \subsection{Maintenance}
+\label{sec:maintenance}
+\noindent We did not implement an alerting system, which left a critical observability gap: 
+the production environment could fail without anyone knowing until we manually checked. 
+The consequences of this were most evident in the security incident described in \cref{sec:hacking-incident}. 
+Implementing an alerting system (at minimum Grafana alerts on uptime, CPU saturation, and 
+authentication failures) would be the highest priority if we continued operating the system.
+Another instructive incident was self-inflicted. To resolve auth cookies being silently invalidated 
+when load-balanced across replicas, we added \texttt{AddDataProtection().PersistKeysToStackExchangeRedis(...)} in 
+\texttt{Program.cs}. The fix introduced a new failure mode: \texttt{ConnectionMultiplexer.Connect()} is 
+blocking and eager, so the entire application failed to start if Redis was momentarily unavailable. 
+This broke production on first deploy and our E2E test job (which had no Redis instance). We resolved it by 
+adding \texttt{abortConnect=false} to the connection string and adding Redis to the E2E workflow. The lesson 
+is that fixes depending on additional infrastructure must be tested against that infrastructure being absent.
+Both incidents share the same shape: failures detectable only after the fact, because we built observability 
+for diagnosis but not for prevention. Closing the alerting gap and tightening test coverage 
+of new infrastructure dependencies would be the highest maintenance priorities.
 
-We did unfortuatly not implemet any alerting system, which meant that we had no way of knowing if the 
-production environment was down until we manually checked.
-implementing this would be top priority if we were to continue maintaining the system.
-\\
-To handle updating dependecies we implemented a scheduled weekly github action ran early monday morning 
-which updates the dependencies.\\
 
 
 % How did you keep dependencies up-to-date?
@@ -64,6 +67,22 @@ which updates the dependencies.\\
 % What would you do differently?
 
 \subsection{DevOps Style of Work}
+Compared to previous software projects, our development process was substantially more iterative 
+and incremental, with continuous integration and delivery as the default rather than an afterthought. 
+The most consequential shift was treating observability as a first-class feature. We built monitoring and
+logging early, and tried using them a our primary feedback loop. This habit has carried over into 
+our other projects and courses. \\
+When it comes to working DevOps style, a DevOps team is most effective when ownership, on call responsibility, 
+and review duties are distributed across all members. Ours was not. 
+\\
+Of our five-person group, two of us carried the substantive work for the full semester. The others didn't commit 
+much code, take branches, nor return to tasks taken on. This was not a deliberate decision, but rather an unfortunate outcome
+of the group dynamics. Some of this we own: in the first weeks we moved quickly and likely raised the bar for 
+participation, probably higher than what was inclusivem, without doin the team-formation work (shared expectations, paired 
+tasks, defined responsibilities, etc.) that would have made on-ramping possible. \\
+The operational cost was real, a bus-factor of two on every piece of infrastructure, the missing 
+alerting in \cref{sec:maintenance}
+
 
 Much more iterative and incremental development process, with a focus on continuous integration and delivery. 
 with a larger focus on introspection and adaption to feedback from monitoring and logging, which allowed us to detect and fix issues in production.

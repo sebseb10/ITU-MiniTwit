@@ -523,6 +523,7 @@ chirp.dump
 *.idx
 *.ilg
 *.ind
+!*/wordcount.aux
 
 # Build directory: ignore everything except the final PDF
 build/*
