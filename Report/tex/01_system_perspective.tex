@@ -1,11 +1,11 @@
 \sloppy \section{System's Perspective}
 \byline{Sebastian Holt Svendsen}
 
-\noindent In this section, we provide an overview of the ITU-MiniTwit system from a technical perspective. 
+\noindent In this section, we provide an overview of the ITU-MiniTwit system. 
 We cover three areas: the architecture and design (\cref{sec:architecture}), the dependencies and technologies used (\cref{sec:dependencies}), 
 and the current state of the system (\cref{sec:current_state}).
 The app is deployed on DigitalOcean as a Docker Swarm cluster, fronted by two nginx load balancers,
-with a shared Redis for user-session-state and a managed PostgreSQL database for persistent data.
+with a shared Redis for session-state and a managed PostgreSQL database for persistent data.
 
 \subsection{Architecture and Design}
 \label{sec:architecture}
@@ -23,46 +23,41 @@ of ITU-MiniTwit deployed on DigitalOcean.
 \end{figure}
 
 We will be going through each tier of the diagram from top-to-bottom.
-\paragraph{Tier 1: Public entry.} Traffic enters from the internet via the DuckDNS domain.
-DuckDNS is a free dynamic DNS service for setting up a domain for ITU-MiniTwit.
-The domain points to a floating IP address, which is a public IP that can be moved between different servers in the cluster, 
-specifically the two load balancers.
+\paragraph{Tier 1: Public entry.} Traffic enters via the DuckDNS domain, a free dynamic DNS 
+service providing public hostname. Which resolves to a floating IP that can be reattached between
+the two load balancers.
 
 \paragraph{Tier 2: Load balancers} are two nginx
 instances, LB1 and LB2,
-that distribute incoming requests to the webapp instances in the next tier. Two are deployed for higher availability.
+that distribute incoming requests to the webapp instances in the next tier.
 \textit{Certbot} is used to automatically obtain and renew TLS
-certificates for the domain, ensuring secure
-HTTPS connections. \textit{Keepalived} implements the heartbeat
+certificates for the domain. \textit{Keepalived} implements the heartbeat
 mechanism: LB1 runs as MASTER and LB2 as BACKUP under VRRP. If LB1 stops responding,
 keepalived on LB2 promotes itself and the Floating IP is reattached automatically, 
 so the public hostname keeps resolving to a healthy node without manual intervention.
 
 \paragraph{Tier 3: App and data} contains two app instances, the Redis instance, and the PostgreSQL database.
-The app instances, App1 and App2, are each a device running a Docker Swarm execution environment 
-that hosts one \texttt{itu-minitwit} replica and a \texttt{node-exporter}.
+The app instances, App1 and App2, are each a node hosting one \texttt{itu-minitwit} replica and a \texttt{node-exporter}.
 Docker Swarm schedules the replicas onto nodes labelled \texttt{role == app}. Both replicas share
 two backing stores: a managed PostgreSQL database for persistent data, and a Redis instance 
-on its own node holding session state and ASP.NET DataProtection keys. Because no per-request state
-is kept inside the app containers, any replica can serve any user, so the load balancers can 
-distribute requests freely and fail a node out without dropping sessions. Rolling updates similarly bring
-up a new container before stopping the old one, so no one is logged out.
-Crashed containers are restarted automatically by Swarm's \texttt{on-failure} restart policy.
+on its own node holding session-state and ASP.NET DataProtection keys. Because the app container 
+hold no per-request state, replicas are interchangeable: requests are distributed freely, 
+and a failed node does not drop sessions.
 
 \paragraph{Tier 4: Monitoring} is its own device with its own Docker Swarm execution environment running Prometheus,
 Grafana, Loki, Alloy, and node-exporter. Prometheus scrapes metrics from every node --- \texttt{:9100} 
 for node-exporter (host metrics) and \texttt{:5001} for the app's \texttt{/metrics} endpoint (HTTP and runtime metrics).
 Grafana Alloy runs on every node, reads the local docker socket, and ships container logs to Loki, which
 stores and indexes them. Grafana queries Prometheus and Loki to render the monitoring and logging dashboards.
-Keeping the observability stack on its own node means an outage of the app tier does not also bring down monitoring,
-which would be needed to diagnose it. 
+Keeping observability on its own node ensures an app-tier outage does not also blind the 
+diagnostic tooling.
 
 {\sloppy \paragraph{Application architecture.} Beyond the deployment topology, the application itself 
 follows a layered design split into three .NET projects with 
 a one-way dependency rule. \texttt{Chirp.Core} holds the domain entities (\texttt{Author}, \texttt{Cheep}, 
-\texttt{Follows}, \texttt{Recheep}). \texttt{Chirp.Infrastructure} owns persistence, the EF Core \texttt{DbContext},
-repositories, and services behind interfaces (\texttt{ICheepRepository}, \texttt{ICheepService}, etc.), and the database
-migrations. \texttt{Chirp.Web} is the presentation layer: ASP.NET Core Razor Pages for the user interface, scaffolded 
+\texttt{Follows}, \texttt{Recheep}). \texttt{Chirp.Infrastructure} owns persistence, \texttt{DbContext},
+repositories, services behind interfaces, and the database migrations.
+\texttt{Chirp.Web} is the presentation layer: ASP.NET Core Razor Pages for the user interface, scaffolded 
 ASP.NET Identity pages for authentication, and a \texttt{MiniTwit-Stub} controller exposing the REST API consumed by 
 the course simulator.}
 \\
@@ -75,15 +70,15 @@ the course simulator.}
     \label{fig:sequence}
 \end{figure}
 
-\noindent In the common case the browser issues an \texttt{HTTPS GET}, which the active nginx instance terminates
-and forwards over HTTP to one of the app replicas. The replica reads the caller's session from Redis. With a 
-valid session it queries PostgreSQL for the latest cheeps and returns the rendered timeline page with \texttt{HTTP 200}
-back through nginx to the browser. The diagram makes each tier's responsibility explicit: nginx only terminates TLS, the 
+\noindent The browser issues an \texttt{HTTPS GET}: the active nginx instance terminates TLS 
+and forwards over HTTP to an app replicas. The replica reads the caller's session from Redis, 
+queries PostgreSQL for latest cheeps, and returns the rendered page with \texttt{HTTP 200}
+back through nginx. The diagram makes each tier's responsibility explicit: nginx only terminates TLS, the 
 app holds no per-request state, and Redis and PostgreSQL hold all shared state.
 \\
-\noindent The \texttt{alt} fragment shows the alternative flow: when no valid session exists, the replica responds
-with \texttt{HTTP 302 /login}. The browser follows this redirect transparently and re-enters the same flow against
-\texttt{/login}, so the user simply lands on the login page.
+\noindent The \texttt{alt} fragment shows the alternative flow: with no valid session
+the replica responds with \texttt{HTTP 302 /login}. The browser follows the redirect, and 
+the user lanmds on the login page.
 \newpage
 \subsection{Dependencies}
 \label{sec:dependencies}
@@ -113,7 +108,6 @@ where they apply, from writing code through building, testing, deploying, and ob
         \midrule
         Web framework & ASP.NET Core Razor Pages & Server-rendered HTML UI \\
             & ASP.NET Core Identity & Local accounts and authentication \\
-            & OAuth provider packages & Referenced but not enabled in the current build \\
             & Swashbuckle / Swagger & Auto-generated docs for the simulator REST API \\
             & prometheus-net.AspNetCore & Exposes the \texttt{/metrics} endpoint scraped by Prometheus \\
             & Newtonsoft.Json & JSON serialisation for the simulator API \\
@@ -153,7 +147,7 @@ where they apply, from writing code through building, testing, deploying, and ob
         Testing & xUnit & Unit and integration test framework for .NET \\
             & Playwright & End-to-end testing of the web UI \\
         \midrule
-        Static analysis & SonarCloud & Code qualiy, coverage, and security analysis in CI \\
+        Static analysis & SonarCloud & Code quality, coverage, and security analysis in CI \\
             & hadolint + ShellCheck & Linting of Dockerfiles and shell scripts \\
         \midrule
         Monitoring / logging & Prometheus & Metrics collection and storage \\
