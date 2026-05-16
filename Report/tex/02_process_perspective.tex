@@ -27,18 +27,16 @@
       \end{tabularx}
   \end{table}
 
-Before we had a running cloud hosted droplet we only ran CI to run a docker container and
-run unit test on a locally hosted sqlite based application.
+Before cloud hosting, CI only built a docker container and ran unit tests against a local SQLite application.
 \\\\
 After cloud hosting on \textbf{DigitalOcean} was setup we added the CD pipeline to the CI pipeline. The CI/CD pipeline were both triggered concurrently on push to main branch
-which then builds a \textbf{Docker image}, pushes it to \textbf{Docker Hub} and then deploys it to the \textbf{DigitalOcean} droplet using \textbf{SSH \& docker pull}. With the later focus on idempotent deployment,
+which then builds a \textbf{Docker image}, pushes it to \textbf{Docker Hub} and then deploys it to the DigitalOcean droplet using \textbf{SSH \& docker pull}. With the later focus on idempotent deployment,
 we added a check to see if the CI pipeline succeeded before the CD pipeline is triggered.
 \\\\
-The CI pipeline was extended to include end-to-end testing using \textbf{Playwright}, and static code analysis using \textbf{SonarCloud} \& \textbf{Trivy}, \textbf{Hadolint} and \textbf{ShellCheck}. As shown in \cref{fig:ci}, on every push the pipeline detects which paths changed, builds the project, and then runs static anal¡¡ tests, SonarCloud analysis, and end-to-end tests in parallel.
+The CI pipeline was extended to include end-to-end testing using \textbf{Playwright}, and static code analysis using \textbf{SonarCloud} \& \textbf{Trivy}, \textbf{Hadolint} and \textbf{ShellCheck}. As shown in \cref{fig:ci}, on every push the pipeline detects which paths changed, builds the project, and then runs static analysis tests, SonarCloud analysis, and end-to-end tests in parallel.
 \\\\
 While writing the report we itterativly extended the CI pipeline to check which files were changed to decicde which steps to run, if only the report directory was changed we only run "build PDF" report" step and vice versa.
-
-Our pipeline also creates a scheduled weekly github release every week as a self-contained release.
+The pipeæline also publishes a self-contained GitHub release each week.
 \begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{CI.png}
@@ -55,12 +53,8 @@ Our pipeline also creates a scheduled weekly github release every week as a self
     \label{fig:cd}
 \end{figure}
 
-\noindent To ensure high availability of the application, we extended the CD pipeline to
-deploy the application using \textbf{Docker Swarm}, which deploys the application as a swarm with multiple replica nodes while a load balencer distributes traffic across the replicas.
-this deployment uses rolling updates, which starts a new docker container before closing the previous one to avoid downtime.
-The application also uses shared \textbf{Redis} which caches data across the replicas.
-The detailed steps of the \textit{Deploy} job are shown in \cref{fig:cd-deploy}:
-
+\noindent The \textit{Deploy} job applies the Docker Swarm stack file via \texttt{docker stack deploy}. 
+Rolling-update semantics are covered in \cref{sec:architecture}. Detailed steps in \cref{fig:cd-deploy}
 
 \begin{figure}[H]
     \centering
@@ -76,13 +70,10 @@ The detailed steps of the \textit{Deploy} job are shown in \cref{fig:cd-deploy}:
 %        deployment strategy (rolling, blue/green, etc.), release.
 
 \subsection{Monitoring}
-\href{http://165.245.209.232:3000/d/minitwit-dashboard/itu-minitwit-production?orgId=1&from=now-1h&to=now&timezone=browser&refresh=30s}{Link to Grafana monitoring dashboard}
-
-
-\noindent Metrics are collected through \textbf{Prometheus} and visualised in \textbf{Grafana},
-both running as Docker services on a dedicated monitoring droplet, isolated from the application.
-Prometheus scrapes application metrics via \texttt{'itu-minitwit-app'} defined in the Prometheus configuration and
-metrics from Node Exporter running on each Swarm node.
+\href{http://165.245.209.232:3000/d/minitwit-dashboard/itu-minitwit-production?orgId=1&from=now-1h&to=now&timezone=browser&refresh=30s}{Link to Grafana monitoring dashboard.}
+\noindent Building on the monitorign topology in \cref{sec:architecture}, Prometheus scrapes 
+the application's \texttt{metrics} endpoint (job \texttt{itu-minitwit-app}) and Node exporter 
+on each Swarm node. Grafana renders the dashboards.
 \\
 
 \noindent We have itterativly upated which data is collected and visualised in the Grafana dashboard based on the needs of the project.
@@ -105,14 +96,10 @@ At the projects end we have the Grafana dashboard organised into five sections, 
 \end{figure}
 
 \subsection{Logging}
-
-\href{http://165.245.209.232:3000/d/itu-minitwit-logs/itu-minitwit-logs?orgId=1&from=now-1h&to=now&timezone=browser&var-container=$__all&var-level=.%2A&refresh=30s}{Link to Grafana logging dashboard}
-
-\noindent Application logs are aggregated using \textbf{Loki} and collected by
-\textbf{Grafana Alloy}. Each line in the logs is labelled with the 
-container name, service name, stream, and image name.
-Grafana Alloy collects logs from all the replica nodes and forwards them to Loki for aggregation and storage.
-\textbf{Loki} rejects old samples above the "age" of 168hours (7 days) to prevent unbounded log storage growth.
+\href{http://165.245.209.232:3000/d/itu-minitwit-logs/itu-minitwit-logs?orgId=1&from=now-1h&to=now&timezone=browser&var-container=$__all&var-level=.%2A&refresh=30s}{Link to Grafana logging dashboard.}
+\noindent Grafana Alloy runs on every Swarm node, reads the docker socket, and ships container 
+logs to Loki labelled with container, service, stream, and image. Loki rejects samples older than 
+168 hours (7 days) to bound storage. 
 \\\\    
 \noindent The application logs the following events:
 \begin{itemize}
@@ -157,7 +144,7 @@ we instead tried to implement parts of the guide \href{https://cheatsheetseries.
     \item \textbf{Static code analysis} — SonarCloud and trivy are used to identify security vulnerabilities in the codebase/pipelines/docker images.
 \end{itemize}
 
-\noindent Static code analysis is integrated in the CI pipeline using \textbf{SonarCloud} \& \textbf{Trivy}.
+\noindent Static code analysis is integrated in the CI pipeline using SonarCloud \& Trivy.
 Every build is analysed for bugs, coverage, code duplication and security vulnerabilities.
 As shown in \cref{fig:sonarcloud}, there are still a number of security vulnerabilities but 
 with only two of five members actively contributing, there was not time to address them before the deadline
@@ -179,18 +166,11 @@ with only two of five members actively contributing, there was not time to addre
 
 \subsection{Availability and Scaling}
 
-\textbf{Andreas Schiøtt, Sebastian Holt Svendsen}
-\\\\
-\noindent The application is deployed as a \textbf{Docker Swarm} stack with \textbf{2 replicas} hosted as 2 separate \textbf{DigtalOcean droplets} as can be seen in Fig:\ref{fig:deployment}.
-our load balencer distributes traffic across replicas, and automatically reroutes requests away from any node that becomes unavailable/crash.
-The load balencer performs health checks on the replicas using heartbeats through keepalived, and if a replica becomes unavailable it is automatically removed from the load balencer until it becomes healthy again. 
-Crashed containers are restarted automatically via the on-failure restart policy.
-\\\\
-\noindent the application uses a \textbf{Redis} instance shared between all nodes which caches data between replica nodes, which ensures consistent returned data regardless of which replica handles the request.
-\\
-\noindent Deployments are made using rolling updates, which starts a new docker container before closing the previous one to avoid downtime.
-this process is repeated for each node with a 10 second delay to ensure that at least one instance is always available for requests during deployments to reduced downtime of the system.
-
+\byline{Andreas Schiøtt, Sebastian Holt Svendsen}
+\noindent The application topology described in \cref{sec:architecture} already delivers our availability 
+guarantees: keepalived VRRP between the two load balancers, two app replicas behind \texttt{least\_conn} 
+routing, Swarm's \texttt{on-failure} restart policy for crashed containers, and rolling updates 
+with a 10-seconds delay between replicas to keep at least one instance serving traffic.
 % How do you handle availability (replication, health checks, restarts)?
 % How do you scale (horizontal scaling, load balancing)?
 % E.g. Docker Swarm replicas, Kubernetes HPA, DigitalOcean load balancer.
