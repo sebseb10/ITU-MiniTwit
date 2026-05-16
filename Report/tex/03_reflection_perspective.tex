@@ -1,3 +1,5 @@
+%TC:envir tabular 0 0
+%TC:envir tabularx 0 0
 \sloppy \section{Reflection Perspective}
 \byline{Andreas Schiøtt, Sebastian Holt Svendsen}
 
@@ -7,10 +9,10 @@ Our initial implementation of CI/CD pipelines ran concurrently: a push would tri
 deployment before its CI run had finished, so a failing build could reach production silently. 
 We fixed this by gating CD on a successful CI run, and later added caching to speed up the End-to-End 
 tests, which had been a bottlenec \\
-In early iterations we did not cull old containers on deployment. The resulting CPU pressure 
-was first visible through our monitoring stack, which then became a crucial diagnostic tool. 
-Monitoring and logging initially ran on the same droplet as the application, a single point of failure that could blind 
-us at the worst moment, so we moved them onto a dedicated droplet, a decision that proved fortunate 
+Early on we did not cull old containers on deployment. The resulting CPU pressure 
+was first surfaced through our monitoring stack, which then became a crucial diagnostic tool. 
+Monitoring and logging initially ran on the same droplet as the application, a single point of failure
+so we moved them onto a dedicated droplet, a decision that proved fortunate 
 when that droplet was later compromised.
 
 % What were the biggest challenges when evolving the codebase?
@@ -22,8 +24,8 @@ days earlier: a brute-force SSH scanning campaign, ongoing since 2026-04-19, had
 the \texttt{preprod-deploy} key being used for root access from four Azure IPs. The attacker 
 deployed a cryptominer disguised as \texttt{/tmp/mysql}, created a fake \texttt{dnsmasq} user 
 for persistence, and started a rogue \texttt{chirp-postgres} container. Ironically the compromise 
-was discovered not through our monitoring stack but because of it, the droplet was unresponsive and 
-pinned at 100\% CPU, leading to a manual investigation. With root access obtained via the 
+was discovered not through our monitoring but because of it, the droplet was unresponsive and 
+100\% CPU usage, prompting manual investigation. With root access via the 
 leaked key, the host could not be salvaged. We destroyed and rebuilt it, restricting SSH 
 access via UFW to our own IPs. Full timeline in 
 \href{https://github.com/sebseb10/ITU-MiniTwit/blob/main/security-incident-ie-BITCOIN-MINE.md}{\texttt{security-incident-ie-BITCOIN-MINE.md}}.

@@ -1,3 +1,5 @@
+%TC:envir tabular 0 0
+%TC:envir tabularx 0 0
 \sloppy \section{System's Perspective}
 \byline{Sebastian Holt Svendsen}
 
@@ -23,46 +25,30 @@ of ITU-MiniTwit deployed on DigitalOcean.
 \end{figure}
 
 We will be going through each tier of the diagram from top-to-bottom.
-\paragraph{Tier 1: Public entry.} Traffic enters via the DuckDNS domain, a free dynamic DNS 
-service providing public hostname. Which resolves to a floating IP that can be reattached between
+\paragraph{Tier 1: Public entry.} Traffic enters via the DuckDNS domain, a free DNS 
+service, resolving to a floating IP that can be reattached between
 the two load balancers.
 
-\paragraph{Tier 2: Load balancers} are two nginx
-instances, LB1 and LB2,
-that distribute incoming requests to the webapp instances in the next tier.
-\textit{Certbot} is used to automatically obtain and renew TLS
-certificates for the domain. \textit{Keepalived} implements the heartbeat
-mechanism: LB1 runs as MASTER and LB2 as BACKUP under VRRP. If LB1 stops responding,
-keepalived on LB2 promotes itself and the Floating IP is reattached automatically, 
-so the public hostname keeps resolving to a healthy node without manual intervention.
+\paragraph{Tier 2: Load balancers.} Two nginx instances (LB1 MASTER, LB2 BACKUP) terminates
+TLS via \texttt{Certbot} and distribute requests to the next tier. \textit{Keepalived} runs 
+VRRP between them. On failue of the master, the backup promotes itself and the floating IP is 
+reattached automatically.
 
-\paragraph{Tier 3: App and data} contains two app instances, the Redis instance, and the PostgreSQL database.
-The app instances, App1 and App2, are each a node hosting one \texttt{itu-minitwit} replica and a \texttt{node-exporter}.
-Docker Swarm schedules the replicas onto nodes labelled \texttt{role == app}. Both replicas share
-two backing stores: a managed PostgreSQL database for persistent data, and a Redis instance 
-on its own node holding session-state and ASP.NET DataProtection keys. Because the app container 
-hold no per-request state, replicas are interchangeable: requests are distributed freely, 
-and a failed node does not drop sessions.
+\paragraph{Tier 3: App and data} contains two app nodes (App1, App2) each host one \texttt{itu-minitwit} replica
+plus a \texttt{node-exporter}. Swarm schedules them onto nodes labelled \texttt{role == app}. 
+Both replicas share a managed PostgreSQL database and a Redis instance holding session state 
+and ASP.NET DataProtection keys. Because the containers hold no per-request state, replicas 
+are interchangeable and a failed node does not drop sessions.
 
-\paragraph{Tier 4: Monitoring} is its own device with its own Docker Swarm execution environment running Prometheus,
-Grafana, Loki, Alloy, and node-exporter. Prometheus scrapes metrics from every node --- \texttt{:9100} 
-for node-exporter (host metrics) and \texttt{:5001} for the app's \texttt{/metrics} endpoint (HTTP and runtime metrics).
-Grafana Alloy runs on every node, reads the local docker socket, and ships container logs to Loki, which
-stores and indexes them. Grafana queries Prometheus and Loki to render the monitoring and logging dashboards.
-Keeping observability on its own node ensures an app-tier outage does not also blind the 
-diagnostic tooling.
+\paragraph{Tier 4: Monitoring.} A dedicated node runs Prometheus, Grafana, Loki, and Alloy. Prometheus 
+scrapes \texttt{:9100} (host metrics) and \texttt{:5001} (app \texttt{/metrics}). Alloy ships container 
+logs from every node to Loki. Isolation ensures an app-tier outage does not blind the diagnostic tooling.
 
-{\sloppy \paragraph{Application architecture.} Beyond the deployment topology, the application itself 
-follows a layered design split into three .NET projects with 
-a one-way dependency rule. \texttt{Chirp.Core} holds the domain entities (\texttt{Author}, \texttt{Cheep}, 
-\texttt{Follows}, \texttt{Recheep}). \texttt{Chirp.Infrastructure} owns persistence, \texttt{DbContext},
-repositories, services behind interfaces, and the database migrations.
-\texttt{Chirp.Web} is the presentation layer: ASP.NET Core Razor Pages for the user interface, scaffolded 
-ASP.NET Identity pages for authentication, and a \texttt{MiniTwit-Stub} controller exposing the REST API consumed by 
-the course simulator.}
+{\sloppy \paragraph{Application architecture.} The application follows a layered design across three 
+.NET projects with a one-way dependency rule. \texttt{Chirp.Core} (domain entities), \texttt{Chirp.Infrastructure} 
+(EF Core \texttt{DbContext}, repositories, services, migrations), and \texttt{Chirp.Web} (Razor Pagesm scaffolded 
+Identity pages, and the \texttt{MiniTwit-Stub} controller exposing the REST API). 
 \\
-\\
-\noindent To complement this static view, \cref{fig:sequence} traces what happens at runtime when a user requests the public timeline.
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{Sequence.png}
@@ -70,15 +56,12 @@ the course simulator.}
     \label{fig:sequence}
 \end{figure}
 
-\noindent The browser issues an \texttt{HTTPS GET}: the active nginx instance terminates TLS 
-and forwards over HTTP to an app replicas. The replica reads the caller's session from Redis, 
-queries PostgreSQL for latest cheeps, and returns the rendered page with \texttt{HTTP 200}
-back through nginx. The diagram makes each tier's responsibility explicit: nginx only terminates TLS, the 
-app holds no per-request state, and Redis and PostgreSQL hold all shared state.
-\\
-\noindent The \texttt{alt} fragment shows the alternative flow: with no valid session
-the replica responds with \texttt{HTTP 302 /login}. The browser follows the redirect, and 
-the user lanmds on the login page.
+\Cref{fig:sequence} taces the runtime request flow. In the common case, the browser an \texttt{HTTPS GET}: 
+nginx terminates TLS and forwards over HTTP to an app replica, which reads the caller's session from Redis,
+queries PostgreSQL, and returns the rendered page (\texttt{HTTP 200}). The \texttt{alt} fragment 
+shows the alternative: with no valid session, the replica responds \texttt{HTTP 302 /login} and the browser 
+follows the redirect. The diagram makes the responsibility split explicit, nginx only terminates TLS, 
+the app is stateless, and Redis/PostgreSQL hold all shared state.
 \newpage
 \subsection{Dependencies}
 \label{sec:dependencies}
@@ -108,7 +91,6 @@ where they apply, from writing code through building, testing, deploying, and ob
         \midrule
         Web framework & ASP.NET Core Razor Pages & Server-rendered HTML UI \\
             & ASP.NET Core Identity & Local accounts and authentication \\
-            & OAuth provider packages & Referenced but not enabled in the current build \\
             & Swashbuckle / Swagger & Auto-generated docs for the simulator REST API \\
             & prometheus-net.AspNetCore & Exposes the \texttt{/metrics} endpoint scraped by Prometheus \\
             & Newtonsoft.Json & JSON serialisation for the simulator API \\
@@ -148,7 +130,7 @@ where they apply, from writing code through building, testing, deploying, and ob
         Testing & xUnit & Unit and integration test framework for .NET \\
             & Playwright & End-to-end testing of the web UI \\
         \midrule
-        Static analysis & SonarCloud & Code qualiy, coverage, and security analysis in CI \\
+        Static analysis & SonarCloud & Code quality, coverage, and security analysis in CI \\
             & hadolint + ShellCheck & Linting of Dockerfiles and shell scripts \\
         \midrule
         Monitoring / logging & Prometheus & Metrics collection and storage \\
@@ -158,8 +140,6 @@ where they apply, from writing code through building, testing, deploying, and ob
             & node-exporter & Exposes host-level metrics for Prometheus \\
         \midrule
         Dev tooling & Git / GitHub & Version control, code hosting, and pull-requests \\
-            & Rider & C\# IDE for development \\
-            & Visual Studio Code & Latex editor used for the report \\
         \bottomrule
     \end{tabularx}
 \end{table}
@@ -215,4 +195,3 @@ PostgreSQL database and from per-node Docker Compose to Docker Swarm.
         (mapping the Three Ways, security scanning, infrastructure-as-code) were not
         reached.
 \end{itemize}
-\noindent These would be the priorities for further work.
